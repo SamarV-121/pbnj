@@ -94,5 +94,9 @@ Click Logout in the header to log out. This invalidates your session on the serv
 
 When logged in, the homepage has All, Public, and Private tabs. All is the default and shows every paste, with private ones marked with a "Private" label. Public and Private show only that kind of paste. When logged out, only public pastes are visible and the tabs are hidden.
 
+## Deleting from the Homepage
+
+When logged in, each paste card has a checkbox in its top-left corner. Tick the pastes you want to remove, then click Delete selected and confirm. Select all ticks every paste shown on the page, which is up to 20 at a time. Deleting removes the pastes and their images, then the page reloads. The checkboxes are hidden when logged out.
+
 ---
 Next: Back to 01_welcome.md

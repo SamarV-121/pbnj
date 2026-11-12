@@ -198,6 +198,30 @@ curl -X DELETE https://your-pbnj.workers.dev/api \
 }
 ```
 
+### Delete Multiple Pastes
+
+POST /api/bulk-delete
+
+Requires authentication. Deletes up to 50 pastes and their images in one request. The homepage multi-select uses this endpoint.
+
+```bash
+curl -X POST https://your-pbnj.workers.dev/api/bulk-delete \
+  -H "Authorization: Bearer YOUR_AUTH_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"ids": ["crunchy-peanut-butter-sandwich", "smooth-jelly-toast"]}'
+```
+
+#### Request Body (JSON)
+- `ids` (required): array of 1 to 50 paste IDs
+
+#### Response
+```json
+{
+  "success": true,
+  "deleted": 2
+}
+```
+
 ### Upload Image
 
 POST /api/images

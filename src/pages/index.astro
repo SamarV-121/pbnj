@@ -61,7 +61,7 @@ function highlightPreview(code: string, language: string): string {
 ---
 
 <Layout title={config.name}>
-	<div class="max-w-6xl mx-auto pt-6 pb-12">
+	<div id="homepage" class="max-w-6xl mx-auto pt-6 pb-12">
 		{config.homepage && isAuthed && (
 			<nav class="flex gap-6 mb-6 border-b border-paper-border text-sm">
 				{[
@@ -79,6 +79,32 @@ function highlightPreview(code: string, language: string): string {
 				))}
 			</nav>
 		)}
+		{isAuthed && pastes.length > 0 && (
+			<div class="selection-toolbar items-center gap-4 mb-6 text-sm">
+				<label class="flex items-center gap-2 text-paper-muted cursor-pointer">
+					<input id="select-all" type="checkbox" autocomplete="off" />
+					Select all
+				</label>
+				<span id="selection-count" class="text-paper-muted">0 selected</span>
+				<div class="ml-auto flex gap-2">
+					<button
+						id="cancel-selection-btn"
+						type="button"
+						class="p-2 px-4 text-paper-text border border-paper-border rounded hover:border-paper-border-hover transition-colors"
+					>
+						Cancel
+					</button>
+					<button
+						id="bulk-delete-btn"
+						type="button"
+						class="p-2 px-4 text-paper-text bg-paper-bg2 border border-paper-border rounded hover:border-paper-border-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+						disabled
+					>
+						Delete selected
+					</button>
+				</div>
+			</div>
+		)}
 		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
 		{pastes.length === 0 && (
 			<div class="col-span-full text-center py-12">
@@ -87,27 +113,178 @@ function highlightPreview(code: string, language: string): string {
 			</div>
 		)}
 		{pastes.map((paste) => (
-			<a href={`/${paste.id}`} class="group block">
-				<div class="h-56 flex flex-col cursor-pointer">
-					<div class="flex-1 overflow-hidden relative bg-paper-bg2 rounded preview-block">
-						<pre class="m-0 p-4 overflow-hidden text-xs leading-relaxed"><code class="hljs" set:html={highlightPreview(paste.preview, paste.language)} /></pre>
-						<div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-paper-bg2 to-transparent pointer-events-none"></div>
-					</div>
-					<div class="py-2.5 bg-paper-bg">
-						<div class="text-sm font-medium text-paper-text leading-tight mb-0.5 flex items-center gap-1.5">
-							{paste.is_private === 1 && <span class="text-paper-muted" title="Private">Private</span>}
-							<span>{paste.filename || `${paste.id}.${paste.language}`}</span>
+			<div class="relative paste-card">
+				{isAuthed && (
+					<label class="paste-select items-center gap-2 mb-2 text-xs text-paper-muted cursor-pointer">
+						<input type="checkbox" value={paste.id} data-paste-select autocomplete="off" class="w-4 h-4 cursor-pointer" />
+						Select
+					</label>
+				)}
+				<a href={`/${paste.id}`} class="group block paste-link">
+					<div class="h-56 flex flex-col cursor-pointer">
+						<div class="flex-1 overflow-hidden relative bg-paper-bg2 rounded preview-block">
+							<pre class="m-0 p-4 overflow-hidden text-xs leading-relaxed"><code class="hljs" set:html={highlightPreview(paste.preview, paste.language)} /></pre>
+							<div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-paper-bg2 to-transparent pointer-events-none"></div>
 						</div>
-						<div class="text-xs text-paper-muted leading-tight">
-							{formatDate(paste.updated)}
+						<div class="py-2.5 bg-paper-bg">
+							<div class="text-sm font-medium text-paper-text leading-tight mb-0.5 flex items-center gap-1.5">
+								{paste.is_private === 1 && <span class="text-paper-muted" title="Private">Private</span>}
+								<span>{paste.filename || `${paste.id}.${paste.language}`}</span>
+							</div>
+							<div class="text-xs text-paper-muted leading-tight">
+								{formatDate(paste.updated)}
+							</div>
 						</div>
 					</div>
-				</div>
-			</a>
+				</a>
+			</div>
 		))}
 		</div>
 	</div>
 </Layout>
+
+<script>
+	const root = document.getElementById('homepage');
+	const selectAll = document.getElementById('select-all');
+	const selectionCount = document.getElementById('selection-count');
+	const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+	const cancelSelectionBtn = document.getElementById('cancel-selection-btn');
+
+	const LONG_PRESS_MS = 500;
+	const MOVE_TOLERANCE_PX = 10;
+
+	function getPasteBoxes() {
+		return Array.from(document.querySelectorAll('input[data-paste-select]'));
+	}
+
+	function getSelectedIds() {
+		return getPasteBoxes().filter((box) => box.checked).map((box) => box.value);
+	}
+
+	function updateSelection() {
+		const boxes = getPasteBoxes();
+		const selected = getSelectedIds().length;
+		boxes.forEach((box) => {
+			const preview = box.closest('.paste-card')?.querySelector('.preview-block');
+			preview?.classList.toggle('ring-2', box.checked);
+			preview?.classList.toggle('ring-paper-text', box.checked);
+		});
+		selectAll.checked = boxes.length > 0 && selected === boxes.length;
+		selectAll.indeterminate = selected > 0 && selected < boxes.length;
+		selectionCount.textContent = `${selected} selected`;
+		bulkDeleteBtn.disabled = selected === 0;
+	}
+
+	async function deleteSelected() {
+		const ids = getSelectedIds();
+		if (ids.length === 0) return;
+		if (!confirm(`Delete ${ids.length} paste${ids.length > 1 ? 's' : ''}? This cannot be undone.`)) return;
+
+		bulkDeleteBtn.disabled = true;
+		try {
+			const response = await fetch('/api/bulk-delete', {
+				method: 'POST',
+				credentials: 'same-origin',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ ids }),
+			});
+
+			if (response.ok) {
+				window.location.reload();
+				return;
+			}
+
+			const data = await response.json().catch(() => ({}));
+			alert('Failed to delete pastes: ' + (data.error || response.statusText));
+		} catch (err) {
+			alert('Failed to delete pastes');
+		}
+		updateSelection();
+	}
+
+	function setSelectionMode(enabled) {
+		root.classList.toggle('selection-mode', enabled);
+		if (!enabled) {
+			getPasteBoxes().forEach((box) => {
+				box.checked = false;
+			});
+		}
+		updateSelection();
+	}
+
+	function setCardSelected(card, selected) {
+		card.querySelector('input[data-paste-select]').checked = selected;
+		updateSelection();
+	}
+
+	// Long-pressing a card enters selection mode; while in it, tapping a card toggles it
+	function bindCard(card) {
+		const link = card.querySelector('.paste-link');
+		let pressing = false;
+		let pressTimer = null;
+		let pressStart = { x: 0, y: 0 };
+		let longPressFired = false;
+
+		const cancelPress = () => {
+			pressing = false;
+			clearTimeout(pressTimer);
+		};
+
+		link.addEventListener('pointerdown', (event) => {
+			if (event.pointerType === 'mouse' && event.button !== 0) return;
+			pressing = true;
+			longPressFired = false;
+			pressStart = { x: event.clientX, y: event.clientY };
+			pressTimer = setTimeout(() => {
+				pressing = false;
+				longPressFired = true;
+				if (!root.classList.contains('selection-mode')) setSelectionMode(true);
+				setCardSelected(card, true);
+			}, LONG_PRESS_MS);
+		});
+		link.addEventListener('pointermove', (event) => {
+			const moved =
+				Math.abs(event.clientX - pressStart.x) > MOVE_TOLERANCE_PX ||
+				Math.abs(event.clientY - pressStart.y) > MOVE_TOLERANCE_PX;
+			if (moved) cancelPress();
+		});
+		link.addEventListener('pointerup', cancelPress);
+		link.addEventListener('pointerleave', cancelPress);
+		// Stops the touch callout menu from covering the selection gesture
+		link.addEventListener('contextmenu', (event) => {
+			if (pressing || longPressFired) event.preventDefault();
+		});
+		link.addEventListener('click', (event) => {
+			if (longPressFired) {
+				longPressFired = false;
+				event.preventDefault();
+				return;
+			}
+			if (root.classList.contains('selection-mode')) {
+				event.preventDefault();
+				setCardSelected(card, !card.querySelector('input[data-paste-select]').checked);
+			}
+		});
+	}
+
+	// The toolbar and checkboxes only render for logged-in users
+	if (selectAll) {
+		selectAll.addEventListener('change', () => {
+			getPasteBoxes().forEach((box) => {
+				box.checked = selectAll.checked;
+			});
+			updateSelection();
+		});
+		getPasteBoxes().forEach((box) => box.addEventListener('change', updateSelection));
+		document.querySelectorAll('.paste-card').forEach(bindCard);
+		cancelSelectionBtn.addEventListener('click', () => setSelectionMode(false));
+		bulkDeleteBtn.addEventListener('click', deleteSelected);
+		document.addEventListener('keydown', (event) => {
+			if (event.key === 'Escape') setSelectionMode(false);
+		});
+		updateSelection();
+	}
+</script>
 
 <style is:global>
 	.preview-block pre {
@@ -115,5 +292,17 @@ function highlightPreview(code: string, language: string): string {
 	}
 	.preview-block code {
 		font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+	}
+	.paste-link {
+		-webkit-touch-callout: none;
+		user-select: none;
+	}
+	.selection-toolbar,
+	.paste-select {
+		display: none;
+	}
+	.selection-mode .selection-toolbar,
+	.selection-mode .paste-select {
+		display: flex;
 	}
 </style>
