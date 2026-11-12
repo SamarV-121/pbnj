@@ -44,6 +44,7 @@ The `/new` page provides a simple editor with these options:
 - **Expiry** - Expire the paste after 10m, 1h, 1d, or 1w (or leave as "never")
 - **Private** - Toggle to make the paste unlisted (won't appear on homepage)
 - **Password** - Shown when Private is on. Viewers must enter it to open the paste (optional)
+- **Image** - Add images from a file picker, or drag them onto the editor. See [Images](#images)
 - **Save** - Click or press `Cmd/Ctrl + S` to save
 
 ### Keyboard Shortcuts
@@ -60,6 +61,16 @@ When logged in, an Edit button appears on paste view pages. It opens the editor 
 - **Expiry** - Starts on "keep", which leaves the current expiry unchanged. Pick a duration to restart the clock, or "never" to remove it
 - **Password** - Leave empty to keep the current password, type a new one to change it, or tick "Remove the current password" to clear it
 - **Private** - Turning Private off also removes the paste's password and key
+- **Images** - Listed under the editor. Click Remove to delete an image when you save. In Markdown notes, removing an image also removes its reference
+
+## Images
+
+Use the Image button on `/new` (or drag image files onto the editor) to add images to a note. Accepted types are PNG, JPEG, WebP, and GIF. Larger images are compressed to WebP and scaled down to 2048 px on the longest side. A note can have up to 20 images.
+
+- **Markdown notes** (language set to MD) insert `![image](/i/ID)` at the cursor, so the image appears where you put it
+- **Other notes** show their images below the code
+
+Images follow the paste's privacy. A keyed or password-protected paste requires the same key or unlock to see its images. Images that aren't saved to a paste within 24 hours are deleted.
 
 ## Deleting Pastes
 

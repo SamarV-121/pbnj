@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { isAuthenticated } from '@/lib/auth';
 import { parseDuration } from '@/lib/config';
 import { hashPassword } from '@/lib/password';
+import { attachImagesStatements, detachImagesStatement, parseImageIds } from '@/lib/images';
 
 // GET /api/:id - Fetch paste details for editing (never returns the password hash or key)
 export const GET: APIRoute = async ({ params, request, locals }) => {
@@ -31,6 +32,12 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
       });
     }
 
+    const imageRows = await runtime.env.DB.prepare(
+      'SELECT id FROM paste_images WHERE paste_id = ? ORDER BY created'
+    )
+      .bind(id)
+      .all();
+
     return new Response(
       JSON.stringify({
         id,
@@ -39,6 +46,7 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
         filename: paste.filename,
         private: paste.is_private === 1,
         hasPassword: !!paste.password_hash,
+        images: imageRows.results.map((row: any) => row.id),
       }),
       {
         status: 200,
@@ -84,6 +92,15 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
 
     if (body.private !== undefined && typeof body.private !== 'boolean') {
       return new Response(JSON.stringify({ error: 'private must be true or false' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Omitting images leaves the paste's images unchanged
+    const imageIds = body.images === undefined ? undefined : parseImageIds(body.images);
+    if (body.images !== undefined && !imageIds) {
+      return new Response(JSON.stringify({ error: 'images must be a list of up to 20 image IDs' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -147,6 +164,14 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
       });
     }
 
+    // Attach the listed images and delete any others on this paste
+    if (imageIds) {
+      await runtime.env.DB.batch([
+        ...attachImagesStatements(runtime.env.DB, id, imageIds),
+        detachImagesStatement(runtime.env.DB, id, imageIds),
+      ]);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -185,12 +210,11 @@ export const DELETE: APIRoute = async ({ params, request, locals }) => {
       });
     }
 
-    // Delete the paste
-    const result = await runtime.env.DB.prepare(
-      'DELETE FROM pastes WHERE id = ?'
-    )
-      .bind(id)
-      .run();
+    // Delete the paste and its images
+    const [, result] = await runtime.env.DB.batch([
+      runtime.env.DB.prepare('DELETE FROM paste_images WHERE paste_id = ?').bind(id),
+      runtime.env.DB.prepare('DELETE FROM pastes WHERE id = ?').bind(id),
+    ]);
 
     if (result.meta.changes === 0) {
       return new Response(JSON.stringify({ error: 'Paste not found' }), {

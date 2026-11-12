@@ -3,6 +3,7 @@ import { generateId } from '@/lib/id';
 import config, { parseSize, parseDuration } from '@/lib/config';
 import { isAuthenticated } from '@/lib/auth';
 import { hashPassword } from '@/lib/password';
+import { attachImagesStatements, deleteStaleImages, parseImageIds } from '@/lib/images';
 
 // Detect language from filename extension
 function detectLanguage(filename: string): string {
@@ -120,8 +121,11 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    // Delete all pastes
-    await runtime.env.DB.prepare('DELETE FROM pastes').run();
+    // Delete all pastes and the images attached to them
+    await runtime.env.DB.batch([
+      runtime.env.DB.prepare('DELETE FROM paste_images WHERE paste_id IS NOT NULL'),
+      runtime.env.DB.prepare('DELETE FROM pastes'),
+    ]);
 
     return new Response(
       JSON.stringify({ message: 'All pastes deleted' }),
@@ -164,6 +168,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     let secretKey: string | null = null;
     let passwordHash: string | null = null;
     let expires: unknown;
+    let imageIds: string[] = [];
 
     // Check content type to determine how to parse the request
     const contentType = request.headers.get('Content-Type') || '';
@@ -221,6 +226,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
         isPrivate = true; // A password also makes the paste private
       }
 
+      if (body.images !== undefined) {
+        const parsedImageIds = parseImageIds(body.images);
+        if (!parsedImageIds) {
+          return new Response(JSON.stringify({ error: 'images must be a list of up to 20 image IDs' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        imageIds = parsedImageIds;
+      }
+
       if (!code) {
         return new Response(JSON.stringify({ error: 'Code is required' }), {
           status: 400,
@@ -268,6 +284,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       .bind(Date.now())
       .run();
 
+    // Remove images from deleted pastes and uploads that were never saved
+    await deleteStaleImages(runtime.env.DB, Date.now());
+
     // Generate filename if not provided
     if (!filename || filename.trim() === '') {
       filename = await generateSnippetFilename(runtime.env.DB);
@@ -283,11 +302,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
       const lang = language || 'plaintext';
 
       try {
-        await runtime.env.DB.prepare(
-          'INSERT INTO pastes (id, code, language, updated, filename, is_private, secret_key, expires_at, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        )
-          .bind(id, code, lang, updated, filename, isPrivate ? 1 : 0, secretKey, expiresAt, passwordHash)
-          .run();
+        await runtime.env.DB.batch([
+          runtime.env.DB.prepare(
+            'INSERT INTO pastes (id, code, language, updated, filename, is_private, secret_key, expires_at, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          )
+            .bind(id, code, lang, updated, filename, isPrivate ? 1 : 0, secretKey, expiresAt, passwordHash),
+          ...attachImagesStatements(runtime.env.DB, id, imageIds),
+        ]);
 
         // Success - return the response
         const baseUrl = `${new URL(request.url).origin}/${id}`;

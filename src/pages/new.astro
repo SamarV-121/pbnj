@@ -63,6 +63,17 @@ import config from '@/lib/config';
 					<option value="1w">1w</option>
 				</select>
 
+				<!-- Image upload -->
+				<button
+					id="image-btn"
+					type="button"
+					class="p-2 px-4 text-paper-text bg-paper-bg2 border border-paper-border rounded hover:border-paper-border-hover transition-colors"
+					title="Add images"
+				>
+					Image
+				</button>
+				<input type="file" id="image-input" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden />
+
 				<!-- Private toggle -->
 				<button
 					id="private-btn"
@@ -122,10 +133,15 @@ import config from '@/lib/config';
 				style="min-height: 480px; padding: 1.5rem; outline: none; line-height: 1.625; font-family: 'SF Mono', Monaco, 'Courier New', monospace; font-size: 0.875rem;"
 			></textarea>
 		</div>
+
+		<!-- Uploaded images; Markdown notes also get a reference inserted at the cursor -->
+		<div id="image-list" class="mt-3 flex flex-wrap gap-3"></div>
 	</div>
 </Layout>
 
 <script>
+	import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_IMAGE_DIMENSION, MAX_IMAGES_PER_PASTE } from '../lib/images';
+
 	// Check if logged in
 	const isLoggedIn = localStorage.getItem('pbnj_logged_in');
 	if (!isLoggedIn) {
@@ -150,8 +166,14 @@ import config from '@/lib/config';
 	const passwordInput = document.getElementById('password') as HTMLInputElement;
 	const clearPasswordRow = document.getElementById('clear-password-row') as HTMLLabelElement;
 	const clearPasswordInput = document.getElementById('clear-password') as HTMLInputElement;
+	const imageBtn = document.getElementById('image-btn') as HTMLButtonElement;
+	const imageInput = document.getElementById('image-input') as HTMLInputElement;
+	const imageList = document.getElementById('image-list') as HTMLDivElement;
 
 	let isPrivate = false;
+	// Attached image IDs in display order, and how many uploads are in flight
+	let images: string[] = [];
+	let pendingUploads = 0;
 
 	// Update private button style - just toggle icons, keep same bg as other buttons
 	function updatePrivateButton() {
@@ -193,6 +215,11 @@ import config from '@/lib/config';
 	}
 
 	async function savePaste() {
+		if (pendingUploads > 0) {
+			alert('Wait for image uploads to finish');
+			return;
+		}
+
 		const code = codeInput.value;
 		if (!code.trim()) {
 			showError();
@@ -204,7 +231,7 @@ import config from '@/lib/config';
 		createBtn.style.pointerEvents = 'none';
 
 		try {
-			const body: Record<string, any> = { code };
+			const body: Record<string, any> = { code, images };
 
 			if (filenameInput.value.trim()) {
 				body.filename = filenameInput.value.trim();
@@ -283,6 +310,8 @@ import config from '@/lib/config';
 		filenameInput.value = data.filename || '';
 		languageSelect.value = data.language || '';
 		codeInput.value = data.code;
+		images = Array.isArray(data.images) ? data.images : [];
+		renderImages();
 		isPrivate = data.private;
 		updatePrivateButton();
 
@@ -300,6 +329,136 @@ import config from '@/lib/config';
 	if (editId && isLoggedIn) {
 		loadPaste(editId);
 	}
+
+	// Editor previews reuse the edit key so keyed pastes can still show their images
+	function imageUrl(imageId: string) {
+		return `/i/${imageId}` + (editKey ? `?key=${encodeURIComponent(editKey)}` : '');
+	}
+
+	function renderImages() {
+		imageList.replaceChildren(...images.map((imageId) => {
+			const item = document.createElement('div');
+			item.className = 'flex flex-col gap-2 p-2 border border-paper-border rounded bg-paper-bg2';
+
+			const img = document.createElement('img');
+			img.src = imageUrl(imageId);
+			img.alt = '';
+			img.className = 'h-24 w-auto max-w-[12rem] rounded object-contain';
+
+			const remove = document.createElement('button');
+			remove.type = 'button';
+			remove.textContent = 'Remove';
+			remove.className = 'text-sm text-left text-paper-muted hover:text-paper-text transition-colors';
+			remove.addEventListener('click', () => removeImage(imageId));
+
+			item.append(img, remove);
+			return item;
+		}));
+	}
+
+	function removeImage(imageId: string) {
+		images = images.filter((id) => id !== imageId);
+		// Drop Markdown references so the note doesn't point at a deleted image
+		const reference = new RegExp(`!\\[[^\\]]*\\]\\(/i/${imageId}[^)]*\\)\\n?`, 'g');
+		codeInput.value = codeInput.value.replace(reference, '');
+		renderImages();
+	}
+
+	function insertAtCursor(text: string) {
+		const start = codeInput.selectionStart;
+		const end = codeInput.selectionEnd;
+		codeInput.value = codeInput.value.slice(0, start) + text + codeInput.value.slice(end);
+		codeInput.selectionStart = codeInput.selectionEnd = start + text.length;
+		codeInput.focus();
+	}
+
+	function updateImageButton() {
+		imageBtn.textContent = pendingUploads > 0 ? 'Uploading...' : 'Image';
+	}
+
+	// Files are sent unchanged unless they exceed the size or dimension limits, then re-encoded as WebP
+	async function prepareImage(file: File): Promise<Blob> {
+		const bitmap = await createImageBitmap(file);
+		try {
+			const { width, height } = bitmap;
+			if (file.size <= MAX_IMAGE_BYTES && Math.max(width, height) <= MAX_IMAGE_DIMENSION) {
+				return file;
+			}
+
+			let scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(width, height));
+			for (let attempt = 0; attempt < 8; attempt++) {
+				const canvas = document.createElement('canvas');
+				canvas.width = Math.max(1, Math.round(width * scale));
+				canvas.height = Math.max(1, Math.round(height * scale));
+				const context = canvas.getContext('2d');
+				if (!context) throw new Error('Canvas is not available');
+				context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+				for (const quality of [0.9, 0.8, 0.7, 0.6]) {
+					const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', quality));
+					if (blob && blob.size <= MAX_IMAGE_BYTES) return blob;
+				}
+				scale *= 0.75;
+			}
+			throw new Error('Image is still too large after compressing');
+		} finally {
+			bitmap.close();
+		}
+	}
+
+	async function uploadFiles(files: File[]) {
+		const imageFiles = files.filter((file) => ALLOWED_IMAGE_TYPES.includes(file.type));
+		for (const file of imageFiles) {
+			if (images.length >= MAX_IMAGES_PER_PASTE) {
+				alert(`A note can have at most ${MAX_IMAGES_PER_PASTE} images`);
+				break;
+			}
+
+			pendingUploads++;
+			updateImageButton();
+			try {
+				const body = new FormData();
+				body.append('file', await prepareImage(file), file.name);
+				const response = await fetch('/api/images', {
+					method: 'POST',
+					body,
+					credentials: 'same-origin', // Include session cookie
+				});
+				const data = await response.json().catch(() => ({}));
+				if (!response.ok) {
+					throw new Error(data.error || 'Upload failed');
+				}
+
+				images.push(data.id);
+				if (languageSelect.value === 'markdown') {
+					insertAtCursor(`![image](${data.url})\n`);
+				}
+			} catch (err: any) {
+				alert('Image upload failed: ' + err.message);
+			} finally {
+				pendingUploads--;
+				updateImageButton();
+				renderImages();
+			}
+		}
+	}
+
+	imageBtn.addEventListener('click', () => imageInput.click());
+	imageInput.addEventListener('change', () => {
+		uploadFiles(Array.from(imageInput.files ?? []));
+		imageInput.value = '';
+	});
+
+	editorWrapper.addEventListener('dragover', (e) => {
+		if (e.dataTransfer?.types.includes('Files')) e.preventDefault();
+	});
+	// File drops are always cancelled so the browser doesn't open them; non-image files are ignored.
+	// Text drags have no Files type, so they still land in the editor.
+	editorWrapper.addEventListener('drop', (e) => {
+		if (!e.dataTransfer?.types.includes('Files')) return;
+		e.preventDefault();
+		uploadFiles(Array.from(e.dataTransfer.files));
+	});
 
 	// Focus textarea on load
 	codeInput.focus();

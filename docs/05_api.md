@@ -53,6 +53,7 @@ curl -X POST https://your-pbnj.workers.dev/api \
 | key      | string/boolean | No | Secret key (true = auto-generate) |
 | expires  | string  | No       | Lifetime: `10m`, `1h`, `1d`, or `1w`. Expired pastes return 404 |
 | password | string  | No       | Viewers must enter this to open the paste. Makes the paste private |
+| images   | string[] | No      | Image IDs from `POST /api/images` to attach to the paste. Up to 20 |
 
 #### Response
 ```json
@@ -121,7 +122,8 @@ curl https://your-pbnj.workers.dev/api/crunchy-peanut-butter-sandwich \
   "language": "javascript",
   "filename": "hello.js",
   "private": true,
-  "hasPassword": true
+  "hasPassword": true,
+  "images": ["3f9c0a1b2d4e5f60718293a4b5c6d7e8"]
 }
 ```
 
@@ -152,8 +154,9 @@ curl -X PUT https://your-pbnj.workers.dev/api/crunchy-peanut-butter-sandwich \
 | private  | boolean        | No       | `true` makes the paste private, `false` makes it public. Turning it off also removes the key and password    |
 | password | string or null | No       | Sets a new password, which also makes the paste private. `null` or `""` removes the password                 |
 | expires  | string or null | No       | Restarts the expiry with a duration (`10m`, `1h`, `1d`, `1w`). `null` or `""` removes the expiry             |
+| images   | string[]       | No       | The paste's full image list. Images not listed are deleted. Omit to leave the images unchanged                |
 
-Fields you leave out keep their current values. An invalid `expires` or non-boolean `private` returns 400.
+Fields you leave out keep their current values. An invalid `expires`, non-boolean `private`, or invalid `images` returns 400.
 
 #### Response
 ```json
@@ -191,6 +194,36 @@ curl -X DELETE https://your-pbnj.workers.dev/api \
   "message": "All pastes deleted"
 }
 ```
+
+### Upload Image
+
+POST /api/images
+
+Requires authentication. Uploads an image and returns its ID. Attach it to a paste by listing the ID in `images` when you create or update the paste. Uploads that no paste references are deleted after 24 hours.
+
+Send a multipart form with a `file` field. Accepted types are PNG, JPEG, WebP, and GIF (SVG is not accepted). The maximum size is 1,990,000 bytes.
+
+```bash
+curl -X POST https://your-pbnj.workers.dev/api/images \
+  -H "Authorization: Bearer YOUR_AUTH_KEY" \
+  -F "file=@screenshot.png"
+```
+
+#### Response (201)
+```json
+{
+  "id": "3f9c0a1b2d4e5f60718293a4b5c6d7e8",
+  "url": "/i/3f9c0a1b2d4e5f60718293a4b5c6d7e8"
+}
+```
+
+Returns 400 if `file` is missing, 415 for an unsupported type, and 413 if the file is too large.
+
+### View Image
+
+GET /i/{id}
+
+Returns the image bytes with the stored content type. Images on a paste follow the paste's rules: a paste with a key needs `?key=YOUR_KEY`, and a paste with a password needs the same unlock as the paste page. Unattached images are only visible to logged-in owners. Missing or inaccessible images return 404.
 
 ### View Paste (Web)
 

@@ -24,3 +24,14 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires);
+
+-- Images attached to pastes. paste_id stays NULL until the paste is saved.
+CREATE TABLE IF NOT EXISTS paste_images (
+  id TEXT PRIMARY KEY,
+  paste_id TEXT,
+  mime TEXT NOT NULL,
+  data BLOB NOT NULL,
+  created INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_paste_images_paste_id ON paste_images(paste_id);
