@@ -4,6 +4,7 @@ import config, { parseSize, parseDuration } from '@/lib/config';
 import { isAuthenticated } from '@/lib/auth';
 import { hashPassword } from '@/lib/password';
 import { attachImagesStatements, deleteStaleImages, parseImageIds } from '@/lib/images';
+import { MAX_READ_LIMIT, NOT_BURNED_SQL, parseMaxReads } from '@/lib/reads';
 
 // Detect language from filename extension
 function detectLanguage(filename: string): string {
@@ -80,7 +81,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
     const sortDirection = config.sortOrder === 'oldest' ? 'ASC' : 'DESC';
 
     const { results } = await runtime.env.DB.prepare(
-      `SELECT id, language, updated, filename, SUBSTR(code, 1, 200) as preview FROM pastes WHERE (is_private = 0 OR is_private IS NULL) AND (expires_at IS NULL OR expires_at > ?) ORDER BY updated ${sortDirection} LIMIT ? OFFSET ?`
+      `SELECT id, language, updated, filename, SUBSTR(code, 1, 200) as preview FROM pastes WHERE (is_private = 0 OR is_private IS NULL) AND (expires_at IS NULL OR expires_at > ?) AND ${NOT_BURNED_SQL} ORDER BY updated ${sortDirection} LIMIT ? OFFSET ?`
     )
       .bind(Date.now(), limit, cursor)
       .all();
@@ -168,6 +169,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     let secretKey: string | null = null;
     let passwordHash: string | null = null;
     let expires: unknown;
+    let maxReadsValue: unknown;
     let imageIds: string[] = [];
 
     // Check content type to determine how to parse the request
@@ -206,6 +208,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         isPrivate = true; // A password also makes the paste private
       }
       expires = formData.get('expires');
+      maxReadsValue = formData.get('maxReads');
     } else if (contentType.includes('application/json')) {
       // Handle JSON (original format)
       const body = await request.json();
@@ -214,6 +217,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       filename = body.filename;
       isPrivate = body.private === true;
       expires = body.expires;
+      maxReadsValue = body.maxReads;
 
       // Handle key: true (auto-generate) or key: "custom-key"
       if (body.key) {
@@ -279,6 +283,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
       expiresAt = Date.now() + ttl;
     }
 
+    // Parse read limit. A missing value means the paste never self-destructs.
+    const maxReads = parseMaxReads(maxReadsValue);
+    if (maxReads === undefined) {
+      return new Response(JSON.stringify({ error: `maxReads must be a whole number between 1 and ${MAX_READ_LIMIT}` }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Remove expired pastes so they don't accumulate in D1
     await runtime.env.DB.prepare('DELETE FROM pastes WHERE expires_at IS NOT NULL AND expires_at <= ?')
       .bind(Date.now())
@@ -304,9 +317,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       try {
         await runtime.env.DB.batch([
           runtime.env.DB.prepare(
-            'INSERT INTO pastes (id, code, language, updated, filename, is_private, secret_key, expires_at, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO pastes (id, code, language, updated, filename, is_private, secret_key, expires_at, password_hash, max_reads) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
           )
-            .bind(id, code, lang, updated, filename, isPrivate ? 1 : 0, secretKey, expiresAt, passwordHash),
+            .bind(id, code, lang, updated, filename, isPrivate ? 1 : 0, secretKey, expiresAt, passwordHash, maxReads),
           ...attachImagesStatements(runtime.env.DB, id, imageIds),
         ]);
 
@@ -320,6 +333,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
             url,
             private: isPrivate,
             expiresAt,
+            maxReads,
           }),
           {
             status: 201,

@@ -3,6 +3,7 @@ import Layout from '@/layouts/Layout.astro';
 import config from '@/lib/config';
 import hljs from 'highlight.js';
 import { isAuthenticated } from '@/lib/auth';
+import { NOT_BURNED_SQL } from '@/lib/reads';
 
 // Fetch pastes from D1 database (only if homepage is enabled)
 const runtime = Astro.locals.runtime as any;
@@ -25,7 +26,7 @@ if (config.homepage) {
 
 		const publicClause = '(is_private = 0 OR is_private IS NULL)';
 		const privacyClause = !isAuthed || tab === 'public' ? publicClause : tab === 'private' ? 'is_private = 1' : '1 = 1';
-		const whereClause = `WHERE ${privacyClause} AND (expires_at IS NULL OR expires_at > ?)`;
+		const whereClause = `WHERE ${privacyClause} AND (expires_at IS NULL OR expires_at > ?) AND ${NOT_BURNED_SQL}`;
 		const { results } = await runtime.env.DB.prepare(
 			`SELECT id, language, updated, filename, is_private, SUBSTR(code, 1, 200) as preview FROM pastes ${whereClause} ORDER BY updated ${sortDirection} LIMIT 20`
 		).bind(Date.now()).all();

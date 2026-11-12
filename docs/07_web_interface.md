@@ -42,6 +42,7 @@ The `/new` page provides a simple editor with these options:
 - **Filename** - Optional name for your paste (defaults to "snippet")
 - **Language** - Select language for syntax highlighting (or leave as "auto")
 - **Expiry** - Expire the paste after 10m, 1h, 1d, or 1w (or leave as "never")
+- **Reads** - Burn the paste after this many views, from 1 to 1,000,000 (leave empty for no limit). Only unlocked views by logged-out visitors count
 - **Private** - Toggle to make the paste unlisted (won't appear on homepage)
 - **Password** - Shown when Private is on. Viewers must enter it to open the paste (optional)
 - **Image** - Add images from a file picker, or drag them onto the editor. See [Images](#images)
@@ -59,6 +60,7 @@ The `/new` page provides a simple editor with these options:
 When logged in, an Edit button appears on paste view pages. It opens the editor with the paste's code, filename, language, and privacy setting filled in. Saving updates the same paste, so its URL stays the same.
 
 - **Expiry** - Starts on "keep", which leaves the current expiry unchanged. Pick a duration to restart the clock, or "never" to remove it
+- **Reads** - Set when the paste is created. The read limit can't be changed when editing
 - **Password** - Leave empty to keep the current password, type a new one to change it, or tick "Remove the current password" to clear it
 - **Private** - Turning Private off also removes the paste's password and key
 - **Images** - Listed under the editor. Click Remove to delete an image when you save. In Markdown notes, removing an image also removes its reference

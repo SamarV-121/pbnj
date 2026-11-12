@@ -3,6 +3,7 @@ import { isAuthenticated } from '@/lib/auth';
 import { parseDuration } from '@/lib/config';
 import { hashPassword } from '@/lib/password';
 import { attachImagesStatements, detachImagesStatement, parseImageIds } from '@/lib/images';
+import { NOT_BURNED_SQL } from '@/lib/reads';
 
 // GET /api/:id - Fetch paste details for editing (never returns the password hash or key)
 export const GET: APIRoute = async ({ params, request, locals }) => {
@@ -20,7 +21,7 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
     }
 
     const paste = await runtime.env.DB.prepare(
-      'SELECT code, language, filename, is_private, password_hash FROM pastes WHERE id = ? AND (expires_at IS NULL OR expires_at > ?)'
+      `SELECT code, language, filename, is_private, password_hash FROM pastes WHERE id = ? AND (expires_at IS NULL OR expires_at > ?) AND ${NOT_BURNED_SQL}`
     )
       .bind(id, Date.now())
       .first();
@@ -152,7 +153,7 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     }
 
     const result = await runtime.env.DB.prepare(
-      `UPDATE pastes SET ${sets.join(', ')} WHERE id = ? AND (expires_at IS NULL OR expires_at > ?)`
+      `UPDATE pastes SET ${sets.join(', ')} WHERE id = ? AND (expires_at IS NULL OR expires_at > ?) AND ${NOT_BURNED_SQL}`
     )
       .bind(...values, id, updated)
       .run();

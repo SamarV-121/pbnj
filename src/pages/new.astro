@@ -1,6 +1,7 @@
 ---
 import Layout from '@/layouts/Layout.astro';
 import config from '@/lib/config';
+import { MAX_READ_LIMIT } from '@/lib/reads';
 ---
 
 <Layout title={`New Paste - ${config.name}`}>
@@ -62,6 +63,19 @@ import config from '@/lib/config';
 					<option value="1d">1d</option>
 					<option value="1w">1w</option>
 				</select>
+
+				<!-- Read limit: the paste burns after this many reads -->
+				<input
+					id="max-reads"
+					type="number"
+					min="1"
+					max={MAX_READ_LIMIT}
+					step="1"
+					placeholder="max reads"
+					title="Burn after this many reads (blank for no limit)"
+					class="p-2 w-28 text-paper-text bg-paper-bg2 border border-paper-border rounded hover:border-paper-border-hover transition-colors"
+					style="outline: none;"
+				/>
 
 				<!-- Image upload -->
 				<button
@@ -157,6 +171,9 @@ import config from '@/lib/config';
 	const filenameInput = document.getElementById('filename') as HTMLInputElement;
 	const languageSelect = document.getElementById('language') as HTMLSelectElement;
 	const expiresSelect = document.getElementById('expires') as HTMLSelectElement;
+	const maxReadsInput = document.getElementById('max-reads') as HTMLInputElement;
+	// The read limit is only set at creation
+	if (editId) maxReadsInput.hidden = true;
 	const privateBtn = document.getElementById('private-btn') as HTMLButtonElement;
 	const lockOpen = document.getElementById('lock-open') as SVGElement;
 	const lockClosed = document.getElementById('lock-closed') as SVGElement;
@@ -220,6 +237,10 @@ import config from '@/lib/config';
 			return;
 		}
 
+		if (!maxReadsInput.reportValidity()) {
+			return;
+		}
+
 		const code = codeInput.value;
 		if (!code.trim()) {
 			showError();
@@ -244,6 +265,9 @@ import config from '@/lib/config';
 				body.expires = null;
 			} else if (expiresSelect.value && expiresSelect.value !== 'keep') {
 				body.expires = expiresSelect.value;
+			}
+			if (!editId && maxReadsInput.value) {
+				body.maxReads = Number(maxReadsInput.value);
 			}
 			if (editId || isPrivate) {
 				body.private = isPrivate;

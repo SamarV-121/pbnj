@@ -29,6 +29,7 @@ _pbnj is a simple, minimal self-hosted pastebin solution, focused on getting you
 - 🌐 **Web interface** — create and delete pastes from the browser too
 - 🔒 **Private pastes** — unlisted pastes with optional secret keys
 - ⏳ **Expiring pastes** — pick a lifetime (10m, 1h, 1d, 1w) and it disappears on its own
+- 💥 **Self-destructing pastes** — burn a paste after a set number of reads
 - ☁️ **Edge-powered** — fast globally, free forever on Cloudflare
 - ...and many more!
 

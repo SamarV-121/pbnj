@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { hasPasswordAccess } from '@/lib/password';
+import { NOT_BURNED_SQL } from '@/lib/reads';
 
 export const GET: APIRoute = async ({ params, request, locals, url }) => {
   const { id } = params;
@@ -7,7 +8,7 @@ export const GET: APIRoute = async ({ params, request, locals, url }) => {
 
   try {
     const paste = await runtime.env.DB.prepare(
-      'SELECT code, secret_key, password_hash FROM pastes WHERE id = ? AND (expires_at IS NULL OR expires_at > ?)'
+      `SELECT code, secret_key, password_hash FROM pastes WHERE id = ? AND (expires_at IS NULL OR expires_at > ?) AND ${NOT_BURNED_SQL}`
     ).bind(id, Date.now()).first();
 
     if (!paste) {

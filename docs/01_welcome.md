@@ -26,6 +26,7 @@ That's it. You now have your own pastebin.
 - Web interface for creating and deleting pastes
 - Private pastes with optional secret keys
 - Expiring pastes (10m, 1h, 1d, or 1w)
+- Self-destructing pastes (burn after a set number of reads)
 - Download and copy buttons
 - Social media preview cards
 

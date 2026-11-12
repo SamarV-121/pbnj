@@ -3,6 +3,8 @@ import Layout from '@/layouts/Layout.astro';
 import hljs from 'highlight.js';
 import { hasPasswordAccess, unlockCookieName, unlockToken, verifyPassword } from '@/lib/password';
 import { renderMarkdown } from '@/lib/markdown';
+import { isAuthenticated } from '@/lib/auth';
+import { countRead, NOT_BURNED_SQL } from '@/lib/reads';
 
 const { id } = Astro.params;
 
@@ -12,7 +14,7 @@ let paste: any = null;
 
 try {
 	const result = await runtime.env.DB.prepare(
-		'SELECT * FROM pastes WHERE id = ? AND (expires_at IS NULL OR expires_at > ?)'
+		`SELECT * FROM pastes WHERE id = ? AND (expires_at IS NULL OR expires_at > ?) AND ${NOT_BURNED_SQL}`
 	).bind(id, Date.now()).first();
 
 	paste = result;
@@ -54,6 +56,13 @@ if (paste.password_hash && Astro.request.method === 'POST') {
 const locked =
 	!!paste.password_hash &&
 	!(await hasPasswordAccess(Astro.request, runtime.env.DB, runtime.env.AUTH_KEY, id, paste.password_hash));
+
+// Unlocked views by people who aren't logged in use up a read; the last one burns the paste
+if (paste.max_reads !== null && !locked && !(await isAuthenticated(Astro.request, runtime.env.DB, runtime.env.AUTH_KEY))) {
+	if (!(await countRead(runtime.env.DB, id))) {
+		return Astro.redirect('/404');
+	}
+}
 
 // Edit links keep the key the viewer already used, so keyed pastes open after saving
 const editKey = Astro.url.searchParams.get('key');

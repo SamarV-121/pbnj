@@ -52,6 +52,7 @@ curl -X POST https://your-pbnj.workers.dev/api \
 | private  | boolean | No       | If true, not listed on homepage      |
 | key      | string/boolean | No | Secret key (true = auto-generate) |
 | expires  | string  | No       | Lifetime: `10m`, `1h`, `1d`, or `1w`. Expired pastes return 404 |
+| maxReads | number  | No       | Burns the paste after this many reads, from 1 to 1000000. Only unlocked page views by logged-out visitors count |
 | password | string  | No       | Viewers must enter this to open the paste. Makes the paste private |
 | images   | string[] | No      | Image IDs from `POST /api/images` to attach to the paste. Up to 20 |
 
@@ -61,7 +62,8 @@ curl -X POST https://your-pbnj.workers.dev/api \
   "id": "crunchy-peanut-butter-sandwich",
   "url": "https://your-pbnj.workers.dev/crunchy-peanut-butter-sandwich",
   "private": false,
-  "expiresAt": null
+  "expiresAt": null,
+  "maxReads": null
 }
 ```
 
@@ -71,7 +73,8 @@ With key:
   "id": "crunchy-peanut-butter-sandwich",
   "url": "https://your-pbnj.workers.dev/crunchy-peanut-butter-sandwich?key=abc123",
   "private": true,
-  "expiresAt": null
+  "expiresAt": null,
+  "maxReads": null
 }
 ```
 
@@ -156,7 +159,7 @@ curl -X PUT https://your-pbnj.workers.dev/api/crunchy-peanut-butter-sandwich \
 | expires  | string or null | No       | Restarts the expiry with a duration (`10m`, `1h`, `1d`, `1w`). `null` or `""` removes the expiry             |
 | images   | string[]       | No       | The paste's full image list. Images not listed are deleted. Omit to leave the images unchanged                |
 
-Fields you leave out keep their current values. An invalid `expires`, non-boolean `private`, or invalid `images` returns 400.
+Fields you leave out keep their current values. An invalid `expires`, non-boolean `private`, or invalid `images` returns 400. `maxReads` can only be set when creating a paste.
 
 #### Response
 ```json
@@ -235,6 +238,8 @@ For pastes with a key:
 GET /{id}?key=YOUR_KEY
 
 For pastes with a password, the page shows a password form. Entering the correct password sets an unlock cookie for that paste. Logged-in owners skip the form. Raw (`/r/{id}`) returns 404 until the paste is unlocked.
+
+If a paste has `maxReads`, each unlocked view by a logged-out visitor uses one read. The view that uses the last read still shows the paste, and later views return 404. Logged-in owners' views and raw reads (`/r/{id}`) don't count.
 
 ### View Paste (Raw)
 
