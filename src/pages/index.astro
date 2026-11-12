@@ -7,18 +7,25 @@ import { isAuthenticated } from '@/lib/auth';
 // Fetch pastes from D1 database (only if homepage is enabled)
 const runtime = Astro.locals.runtime as any;
 let pastes: any[] = [];
+let isAuthed = false;
+let tab: 'all' | 'public' | 'private' = 'all';
 
 if (config.homepage) {
 	try {
 		// Check if user is authenticated (via session cookie or Bearer token)
-		const isAuthed = await isAuthenticated(Astro.request, runtime.env.DB, runtime.env.AUTH_KEY);
+		isAuthed = await isAuthenticated(Astro.request, runtime.env.DB, runtime.env.AUTH_KEY);
 
 		const sortDirection = config.sortOrder === 'oldest' ? 'ASC' : 'DESC';
 
-		// If authenticated, show all pastes including private ones
-		const whereClause = isAuthed
-			? 'WHERE expires_at IS NULL OR expires_at > ?'
-			: 'WHERE (is_private = 0 OR is_private IS NULL) AND (expires_at IS NULL OR expires_at > ?)';
+		// Tabs are only available when logged in; anything else falls back to all
+		const requestedTab = Astro.url.searchParams.get('tab');
+		if (isAuthed && (requestedTab === 'public' || requestedTab === 'private')) {
+			tab = requestedTab;
+		}
+
+		const publicClause = '(is_private = 0 OR is_private IS NULL)';
+		const privacyClause = !isAuthed || tab === 'public' ? publicClause : tab === 'private' ? 'is_private = 1' : '1 = 1';
+		const whereClause = `WHERE ${privacyClause} AND (expires_at IS NULL OR expires_at > ?)`;
 		const { results } = await runtime.env.DB.prepare(
 			`SELECT id, language, updated, filename, is_private, SUBSTR(code, 1, 200) as preview FROM pastes ${whereClause} ORDER BY updated ${sortDirection} LIMIT 20`
 		).bind(Date.now()).all();
@@ -54,6 +61,23 @@ function highlightPreview(code: string, language: string): string {
 
 <Layout title={config.name}>
 	<div class="max-w-6xl mx-auto pt-6 pb-12">
+		{config.homepage && isAuthed && (
+			<nav class="flex gap-6 mb-6 border-b border-paper-border text-sm">
+				{[
+					{ id: 'all', label: 'All', href: '/' },
+					{ id: 'public', label: 'Public', href: '/?tab=public' },
+					{ id: 'private', label: 'Private', href: '/?tab=private' },
+				].map((item) => (
+					<a
+						href={item.href}
+						aria-current={tab === item.id ? 'page' : undefined}
+						class={tab === item.id ? 'pb-2 -mb-px border-b-2 border-paper-text text-paper-text' : 'pb-2 -mb-px border-b-2 border-transparent text-paper-muted hover:text-paper-text'}
+					>
+						{item.label}
+					</a>
+				))}
+			</nav>
+		)}
 		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
 		{pastes.length === 0 && (
 			<div class="col-span-full text-center py-12">

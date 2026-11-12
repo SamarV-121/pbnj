@@ -75,7 +75,7 @@ Click Logout in the header to log out. This invalidates your session on the serv
 
 ## Private Pastes on Homepage
 
-When logged in, the homepage shows all your pastes including private ones. Private pastes are marked with a "Private" label. When logged out, only public pastes are visible.
+When logged in, the homepage has All, Public, and Private tabs. All is the default and shows every paste, with private ones marked with a "Private" label. Public and Private show only that kind of paste. When logged out, only public pastes are visible and the tabs are hidden.
 
 ---
 Next: Back to 01_welcome.md
