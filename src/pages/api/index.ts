@@ -81,7 +81,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
     const sortDirection = config.sortOrder === 'oldest' ? 'ASC' : 'DESC';
 
     const { results } = await runtime.env.DB.prepare(
-      `SELECT id, language, updated, filename, SUBSTR(code, 1, 200) as preview FROM pastes WHERE (is_private = 0 OR is_private IS NULL) AND (expires_at IS NULL OR expires_at > ?) AND ${NOT_BURNED_SQL} ORDER BY updated ${sortDirection} LIMIT ? OFFSET ?`
+      `SELECT id, language, updated, filename, SUBSTR(code, 1, 200) as preview FROM pastes WHERE (is_private = 0 OR is_private IS NULL) AND is_unlisted = 0 AND (expires_at IS NULL OR expires_at > ?) AND ${NOT_BURNED_SQL} ORDER BY updated ${sortDirection} LIMIT ? OFFSET ?`
     )
       .bind(Date.now(), limit, cursor)
       .all();
@@ -166,6 +166,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     let language: string | undefined;
     let filename: string | undefined;
     let isPrivate = false;
+    let isUnlisted = false;
     let secretKey: string | null = null;
     let passwordHash: string | null = null;
     let expires: unknown;
@@ -197,6 +198,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
       // Handle private flag and key
       isPrivate = formData.get('private') === 'true';
+      isUnlisted = formData.get('unlisted') === 'true';
       const keyParam = formData.get('key') as string | null;
       if (keyParam) {
         secretKey = keyParam === 'true' ? generateSecretKey() : keyParam;
@@ -216,6 +218,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       language = body.language;
       filename = body.filename;
       isPrivate = body.private === true;
+      isUnlisted = body.unlisted === true;
       expires = body.expires;
       maxReadsValue = body.maxReads;
 
@@ -258,6 +261,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+
+    // Unlisted is a public setting, so a private paste can't also be unlisted
+    if (isPrivate) {
+      isUnlisted = false;
     }
 
     // Check paste size limit
@@ -317,9 +325,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       try {
         await runtime.env.DB.batch([
           runtime.env.DB.prepare(
-            'INSERT INTO pastes (id, code, language, updated, filename, is_private, secret_key, expires_at, password_hash, max_reads) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO pastes (id, code, language, updated, filename, is_private, secret_key, expires_at, password_hash, max_reads, is_unlisted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
           )
-            .bind(id, code, lang, updated, filename, isPrivate ? 1 : 0, secretKey, expiresAt, passwordHash, maxReads),
+            .bind(id, code, lang, updated, filename, isPrivate ? 1 : 0, secretKey, expiresAt, passwordHash, maxReads, isUnlisted ? 1 : 0),
           ...attachImagesStatements(runtime.env.DB, id, imageIds),
         ]);
 
@@ -332,6 +340,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
             id,
             url,
             private: isPrivate,
+            unlisted: isUnlisted,
             expiresAt,
             maxReads,
           }),

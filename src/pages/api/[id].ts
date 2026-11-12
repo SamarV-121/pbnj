@@ -21,7 +21,7 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
     }
 
     const paste = await runtime.env.DB.prepare(
-      `SELECT code, language, filename, is_private, password_hash FROM pastes WHERE id = ? AND (expires_at IS NULL OR expires_at > ?) AND ${NOT_BURNED_SQL}`
+      `SELECT code, language, filename, is_private, is_unlisted, password_hash FROM pastes WHERE id = ? AND (expires_at IS NULL OR expires_at > ?) AND ${NOT_BURNED_SQL}`
     )
       .bind(id, Date.now())
       .first();
@@ -46,6 +46,7 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
         language: paste.language,
         filename: paste.filename,
         private: paste.is_private === 1,
+        unlisted: paste.is_unlisted === 1,
         hasPassword: !!paste.password_hash,
         images: imageRows.results.map((row: any) => row.id),
       }),
@@ -98,6 +99,13 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
       });
     }
 
+    if (body.unlisted !== undefined && typeof body.unlisted !== 'boolean') {
+      return new Response(JSON.stringify({ error: 'unlisted must be true or false' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Omitting images leaves the paste's images unchanged
     const imageIds = body.images === undefined ? undefined : parseImageIds(body.images);
     if (body.images !== undefined && !imageIds) {
@@ -114,7 +122,16 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
 
     // A password only applies to private pastes, so setting one makes the paste private
     const hasPassword = typeof body.password === 'string' && body.password !== '';
-    const isPrivate: boolean | undefined = hasPassword ? true : body.private;
+    let isPrivate: boolean | undefined = hasPassword ? true : body.private;
+    let isUnlisted: boolean | undefined = body.unlisted;
+    // Unlisted pastes are public, so a private paste can't also be unlisted
+    if (isPrivate === true) {
+      isUnlisted = false;
+    } else if (isUnlisted === true) {
+      isPrivate = false;
+    } else if (isPrivate === false) {
+      isUnlisted = false;
+    }
     let passwordHash: string | null | undefined;
     if (hasPassword) {
       passwordHash = await hashPassword(body.password);
@@ -130,6 +147,10 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     if (isPrivate !== undefined) {
       sets.push('is_private = ?');
       values.push(isPrivate ? 1 : 0);
+    }
+    if (isUnlisted !== undefined) {
+      sets.push('is_unlisted = ?');
+      values.push(isUnlisted ? 1 : 0);
     }
     if (passwordHash !== undefined) {
       sets.push('password_hash = ?');

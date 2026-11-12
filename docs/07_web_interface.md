@@ -43,7 +43,8 @@ The `/new` page provides a simple editor with these options:
 - **Language** - Select language for syntax highlighting (or leave as "auto")
 - **Expiry** - Expire the paste after 10m, 1h, 1d, or 1w (or leave as "never")
 - **Reads** - Burn the paste after this many views, from 1 to 1,000,000 (leave empty for no limit). Only unlocked views by logged-out visitors count
-- **Private** - Toggle to make the paste unlisted (won't appear on homepage)
+- **Private** - Toggle to make the paste private. Private pastes are hidden from the homepage for logged-out visitors
+- **Unlisted** - Toggle to keep the paste public but off the homepage for logged-out visitors. Turning it on turns Private off
 - **Password** - Shown when Private is on. Viewers must enter it to open the paste (optional)
 - **Image** - Add images from a file picker, or drag them onto the editor. See [Images](#images)
 - **Save** - Click or press `Cmd/Ctrl + S` to save
@@ -63,6 +64,7 @@ When logged in, an Edit button appears on paste view pages. It opens the editor 
 - **Reads** - Set when the paste is created. The read limit can't be changed when editing
 - **Password** - Leave empty to keep the current password, type a new one to change it, or tick "Remove the current password" to clear it
 - **Private** - Turning Private off also removes the paste's password and key
+- **Unlisted** - Turning Unlisted on also removes the paste's password and key
 - **Images** - Listed under the editor. Click Remove to delete an image when you save. In Markdown notes, removing an image also removes its reference
 
 ## Images
@@ -90,9 +92,9 @@ The delete button appears in:
 
 Click Logout in the header to log out. This invalidates your session on the server and clears the session cookie.
 
-## Private Pastes on Homepage
+## Private and Unlisted Pastes on Homepage
 
-When logged in, the homepage has All, Public, and Private tabs. All is the default and shows every paste, with private ones marked with a "Private" label. Public and Private show only that kind of paste. When logged out, only public pastes are visible and the tabs are hidden.
+When logged in, the homepage has All, Public, and Private tabs. All is the default and shows every paste, with private ones marked with a "Private" label and unlisted ones with an "Unlisted" label. Public shows public pastes, including unlisted ones, and Private shows only private pastes. When logged out, only listed public pastes are visible (private and unlisted pastes are hidden) and the tabs are hidden.
 
 ## Deleting from the Homepage
 

@@ -50,6 +50,7 @@ curl -X POST https://your-pbnj.workers.dev/api \
 | language | string  | No       | Language for syntax highlighting     |
 | filename | string  | No       | Display filename                     |
 | private  | boolean | No       | If true, not listed on homepage      |
+| unlisted | boolean | No       | If true, public but not listed on homepage for logged-out visitors. Ignored when `private` is true |
 | key      | string/boolean | No | Secret key (true = auto-generate) |
 | expires  | string  | No       | Lifetime: `10m`, `1h`, `1d`, or `1w`. Expired pastes return 404 |
 | maxReads | number  | No       | Burns the paste after this many reads, from 1 to 1000000. Only unlocked page views by logged-out visitors count |
@@ -62,6 +63,7 @@ curl -X POST https://your-pbnj.workers.dev/api \
   "id": "crunchy-peanut-butter-sandwich",
   "url": "https://your-pbnj.workers.dev/crunchy-peanut-butter-sandwich",
   "private": false,
+  "unlisted": false,
   "expiresAt": null,
   "maxReads": null
 }
@@ -73,6 +75,7 @@ With key:
   "id": "crunchy-peanut-butter-sandwich",
   "url": "https://your-pbnj.workers.dev/crunchy-peanut-butter-sandwich?key=abc123",
   "private": true,
+  "unlisted": false,
   "expiresAt": null,
   "maxReads": null
 }
@@ -82,7 +85,7 @@ With key:
 
 GET /api
 
-Returns recent public pastes.
+Returns recent public pastes, excluding unlisted ones.
 
 #### Query Parameters
 
@@ -125,6 +128,7 @@ curl https://your-pbnj.workers.dev/api/crunchy-peanut-butter-sandwich \
   "language": "javascript",
   "filename": "hello.js",
   "private": true,
+  "unlisted": false,
   "hasPassword": true,
   "images": ["3f9c0a1b2d4e5f60718293a4b5c6d7e8"]
 }
@@ -155,11 +159,12 @@ curl -X PUT https://your-pbnj.workers.dev/api/crunchy-peanut-butter-sandwich \
 | language | string         | No       | Language for syntax highlighting                                                                             |
 | filename | string         | No       | Display filename                                                                                             |
 | private  | boolean        | No       | `true` makes the paste private, `false` makes it public. Turning it off also removes the key and password    |
+| unlisted | boolean        | No       | `true` makes the paste public but not listed on the homepage for logged-out visitors. Turning it on also removes the key and password |
 | password | string or null | No       | Sets a new password, which also makes the paste private. `null` or `""` removes the password                 |
 | expires  | string or null | No       | Restarts the expiry with a duration (`10m`, `1h`, `1d`, `1w`). `null` or `""` removes the expiry             |
 | images   | string[]       | No       | The paste's full image list. Images not listed are deleted. Omit to leave the images unchanged                |
 
-Fields you leave out keep their current values. An invalid `expires`, non-boolean `private`, or invalid `images` returns 400. `maxReads` can only be set when creating a paste.
+Fields you leave out keep their current values. An invalid `expires`, non-boolean `private` or `unlisted`, or invalid `images` returns 400. `maxReads` can only be set when creating a paste.
 
 #### Response
 ```json

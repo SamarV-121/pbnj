@@ -27,7 +27,8 @@ _pbnj is a simple, minimal self-hosted pastebin solution, focused on getting you
 - 🥪 **Memorable URLs** — `crunchy-peanut-butter-sandwich` instead of `x7f9a2`
 - ⌨️ **CLI-first** — `pbnj file.py` and you're done
 - 🌐 **Web interface** — create and delete pastes from the browser too
-- 🔒 **Private pastes** — unlisted pastes with optional secret keys
+- 🔒 **Private pastes** — hidden from logged-out visitors on the homepage, with optional passwords and secret keys
+- 🔗 **Unlisted pastes** — public, but kept off the homepage for logged-out visitors
 - ⏳ **Expiring pastes** — pick a lifetime (10m, 1h, 1d, 1w) and it disappears on its own
 - 💥 **Self-destructing pastes** — burn a paste after a set number of reads
 - ☁️ **Edge-powered** — fast globally, free forever on Cloudflare

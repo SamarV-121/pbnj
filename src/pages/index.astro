@@ -25,10 +25,11 @@ if (config.homepage) {
 		}
 
 		const publicClause = '(is_private = 0 OR is_private IS NULL)';
-		const privacyClause = !isAuthed || tab === 'public' ? publicClause : tab === 'private' ? 'is_private = 1' : '1 = 1';
+		const listedClause = `${publicClause} AND is_unlisted = 0`;
+		const privacyClause = !isAuthed ? listedClause : tab === 'public' ? publicClause : tab === 'private' ? 'is_private = 1' : '1 = 1';
 		const whereClause = `WHERE ${privacyClause} AND (expires_at IS NULL OR expires_at > ?) AND ${NOT_BURNED_SQL}`;
 		const { results } = await runtime.env.DB.prepare(
-			`SELECT id, language, updated, filename, is_private, SUBSTR(code, 1, 200) as preview FROM pastes ${whereClause} ORDER BY updated ${sortDirection} LIMIT 20`
+			`SELECT id, language, updated, filename, is_private, is_unlisted, SUBSTR(code, 1, 200) as preview FROM pastes ${whereClause} ORDER BY updated ${sortDirection} LIMIT 20`
 		).bind(Date.now()).all();
 
 		pastes = results || [];
@@ -129,6 +130,7 @@ function highlightPreview(code: string, language: string): string {
 						<div class="py-2.5 bg-paper-bg">
 							<div class="text-sm font-medium text-paper-text leading-tight mb-0.5 flex items-center gap-1.5">
 								{paste.is_private === 1 && <span class="text-paper-muted" title="Private">Private</span>}
+								{paste.is_unlisted === 1 && <span class="text-paper-muted" title="Unlisted">Unlisted</span>}
 								<span>{paste.filename || `${paste.id}.${paste.language}`}</span>
 							</div>
 							<div class="text-xs text-paper-muted leading-tight">

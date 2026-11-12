@@ -176,7 +176,7 @@ Examples:
   pbnj script.py                    # Upload Python file
   cat logs.txt | pbnj -L plaintext  # Pipe with language
   pbnj -f "app.js" - < code.txt     # Custom filename from stdin
-  pbnj -p script.py                 # Upload as private (unlisted)
+  pbnj -p script.py                 # Upload as private
   pbnj -p -k script.py              # Private with auto-generated key
   pbnj -p -k "mykey" script.py      # Private with custom key
   pbnj -e 1h script.py              # Upload, expires in 1 hour

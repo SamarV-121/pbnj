@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS pastes (
   expires_at INTEGER,
   password_hash TEXT,
   max_reads INTEGER,
-  read_count INTEGER NOT NULL DEFAULT 0
+  read_count INTEGER NOT NULL DEFAULT 0,
+  is_unlisted INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_updated ON pastes(updated DESC);

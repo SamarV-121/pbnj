@@ -100,6 +100,17 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 					Preview
 				</button>
 
+				<!-- Unlisted toggle -->
+				<button
+					id="unlisted-btn"
+					type="button"
+					class="p-2 px-4 text-paper-text bg-paper-bg2 border border-paper-border rounded hover:border-paper-border-hover transition-colors"
+					title="Public, but hidden from the homepage when logged out"
+					aria-pressed="false"
+				>
+					Unlisted
+				</button>
+
 				<!-- Private toggle -->
 				<button
 					id="private-btn"
@@ -200,9 +211,11 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 	const imageInput = document.getElementById('image-input') as HTMLInputElement;
 	const imageList = document.getElementById('image-list') as HTMLDivElement;
 	const previewBtn = document.getElementById('preview-btn') as HTMLButtonElement;
+	const unlistedBtn = document.getElementById('unlisted-btn') as HTMLButtonElement;
 	const markdownPreview = document.getElementById('markdown-preview') as HTMLDivElement;
 
 	let isPrivate = false;
+	let isUnlisted = false;
 	// Attached image IDs in display order, and how many uploads are in flight
 	let images: string[] = [];
 	let pendingUploads = 0;
@@ -211,6 +224,8 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 	// Update private button style - just toggle icons, keep same bg as other buttons
 	function updatePrivateButton() {
 		passwordRow.style.display = isPrivate ? 'block' : 'none';
+		unlistedBtn.textContent = isUnlisted ? 'Unlisted ✓' : 'Unlisted';
+		unlistedBtn.setAttribute('aria-pressed', String(isUnlisted));
 		if (isPrivate) {
 			lockOpen.style.display = 'none';
 			lockClosed.style.display = 'block';
@@ -223,6 +238,14 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 	// Toggle private
 	privateBtn.addEventListener('click', () => {
 		isPrivate = !isPrivate;
+		if (isPrivate) isUnlisted = false;
+		updatePrivateButton();
+	});
+
+	// Toggle unlisted; it's public, so turning it on turns private off
+	unlistedBtn.addEventListener('click', () => {
+		isUnlisted = !isUnlisted;
+		if (isUnlisted) isPrivate = false;
 		updatePrivateButton();
 	});
 
@@ -287,6 +310,9 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 			}
 			if (editId || isPrivate) {
 				body.private = isPrivate;
+			}
+			if (editId || isUnlisted) {
+				body.unlisted = isUnlisted;
 			}
 			if (isPrivate && clearPasswordInput.checked) {
 				body.password = null;
@@ -354,6 +380,7 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 		images = Array.isArray(data.images) ? data.images : [];
 		renderImages();
 		isPrivate = data.private;
+		isUnlisted = data.unlisted;
 		updatePrivateButton();
 
 		// Keep the current expiry unless another option is picked
