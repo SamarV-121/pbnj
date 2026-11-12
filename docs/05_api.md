@@ -52,6 +52,7 @@ curl -X POST https://your-pbnj.workers.dev/api \
 | private  | boolean | No       | If true, not listed on homepage      |
 | key      | string/boolean | No | Secret key (true = auto-generate) |
 | expires  | string  | No       | Lifetime: `10m`, `1h`, `1d`, or `1w`. Expired pastes return 404 |
+| password | string  | No       | Viewers must enter this to open the paste. Makes the paste private |
 
 #### Response
 ```json
@@ -171,6 +172,8 @@ Returns HTML page with syntax highlighting.
 
 For pastes with a key:
 GET /{id}?key=YOUR_KEY
+
+For pastes with a password, the page shows a password form. Entering the correct password sets an unlock cookie for that paste. Logged-in owners skip the form. Raw (`/r/{id}`) returns 404 until the paste is unlocked.
 
 ### View Paste (Raw)
 

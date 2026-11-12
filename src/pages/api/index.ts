@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { generateId } from '@/lib/id';
 import config, { parseSize, parseDuration } from '@/lib/config';
 import { isAuthenticated } from '@/lib/auth';
+import { hashPassword } from '@/lib/password';
 
 // Detect language from filename extension
 function detectLanguage(filename: string): string {
@@ -161,6 +162,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     let filename: string | undefined;
     let isPrivate = false;
     let secretKey: string | null = null;
+    let passwordHash: string | null = null;
     let expires: unknown;
 
     // Check content type to determine how to parse the request
@@ -193,6 +195,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
         secretKey = keyParam === 'true' ? generateSecretKey() : keyParam;
         isPrivate = true; // If key is provided, paste is automatically private
       }
+      const passwordParam = formData.get('password') as string | null;
+      if (passwordParam) {
+        passwordHash = await hashPassword(passwordParam);
+        isPrivate = true; // A password also makes the paste private
+      }
       expires = formData.get('expires');
     } else if (contentType.includes('application/json')) {
       // Handle JSON (original format)
@@ -207,6 +214,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       if (body.key) {
         secretKey = body.key === true ? generateSecretKey() : body.key;
         isPrivate = true; // If key is provided, paste is automatically private
+      }
+
+      if (typeof body.password === 'string' && body.password !== '') {
+        passwordHash = await hashPassword(body.password);
+        isPrivate = true; // A password also makes the paste private
       }
 
       if (!code) {
@@ -272,9 +284,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
       try {
         await runtime.env.DB.prepare(
-          'INSERT INTO pastes (id, code, language, updated, filename, is_private, secret_key, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+          'INSERT INTO pastes (id, code, language, updated, filename, is_private, secret_key, expires_at, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
         )
-          .bind(id, code, lang, updated, filename, isPrivate ? 1 : 0, secretKey, expiresAt)
+          .bind(id, code, lang, updated, filename, isPrivate ? 1 : 0, secretKey, expiresAt, passwordHash)
           .run();
 
         // Success - return the response

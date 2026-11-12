@@ -1,6 +1,7 @@
 ---
 import Layout from '@/layouts/Layout.astro';
 import hljs from 'highlight.js';
+import { hasPasswordAccess, unlockCookieName, unlockToken, verifyPassword } from '@/lib/password';
 
 const { id } = Astro.params;
 
@@ -30,6 +31,29 @@ if (paste.secret_key) {
 	}
 }
 
+// A correct password POST sets an unlock cookie scoped to this paste
+let passwordError = '';
+if (paste.password_hash && Astro.request.method === 'POST') {
+	const form = await Astro.request.formData();
+	const attempt = String(form.get('password') ?? '');
+	if (await verifyPassword(attempt, paste.password_hash)) {
+		const token = await unlockToken(id, paste.password_hash, runtime.env.AUTH_KEY);
+		Astro.cookies.set(unlockCookieName(id), token, {
+			path: '/',
+			httpOnly: true,
+			secure: true,
+			sameSite: 'lax',
+			maxAge: 60 * 60 * 24,
+		});
+		return Astro.redirect(Astro.url.pathname + Astro.url.search);
+	}
+	passwordError = 'Wrong password';
+}
+
+const locked =
+	!!paste.password_hash &&
+	!(await hasPasswordAccess(Astro.request, runtime.env.DB, runtime.env.AUTH_KEY, id, paste.password_hash));
+
 // Highlight code server-side
 let highlightedCode: string;
 try {
@@ -43,17 +67,18 @@ try {
 
 // Prepare OG metadata
 const filename = paste.filename || id;
-const codePreview = paste.code.slice(0, 150).replace(/\n/g, ' ').trim() + (paste.code.length > 150 ? '...' : '');
+const codePreview = locked ? '' : paste.code.slice(0, 150).replace(/\n/g, ' ').trim() + (paste.code.length > 150 ? '...' : '');
 ---
 
-<Layout title={filename} description={codePreview}>
+<Layout title={locked ? 'Protected paste' : filename} description={codePreview}>
 	<div class="max-w-6xl mx-auto pb-12">
 		<div class="mb-3 flex items-center justify-between gap-3">
 			<h1 class="text-xl sm:text-2xl font-medium text-paper-text truncate">
-				{paste.filename || id}
+				{locked ? 'Password required' : paste.filename || id}
 			</h1>
 
 			<!-- Desktop buttons -->
+			{!locked && (
 			<div class="hidden sm:flex gap-3 flex-shrink-0">
 				<a
 					href={`/r/${id}`}
@@ -193,11 +218,31 @@ const codePreview = paste.code.slice(0, 150).replace(/\n/g, ' ').trim() + (paste
 					</button>
 				</div>
 			</div>
+			)}
 		</div>
 
-		<div class="border border-paper-border rounded overflow-hidden code-block bg-paper-bg2">
-			<pre class="bg-paper-bg2"><code class="hljs" set:html={highlightedCode} /></pre>
-		</div>
+		{!locked && (
+			<div class="border border-paper-border rounded overflow-hidden code-block bg-paper-bg2">
+				<pre class="bg-paper-bg2"><code class="hljs" set:html={highlightedCode} /></pre>
+			</div>
+		)}
+
+		{locked && (
+			<form method="POST" class="max-w-sm mx-auto mt-16 p-6 border border-paper-border rounded bg-paper-bg2">
+				<p class="text-paper-text mb-4">This paste is password protected.</p>
+				<input
+					type="password"
+					name="password"
+					placeholder="Password"
+					required
+					autofocus
+					class="w-full p-2 mb-3 text-paper-text bg-paper-bg border border-paper-border rounded"
+					style="outline: none;"
+				/>
+				{passwordError && <p class="mb-3 text-sm" style="color: #a63d40;">{passwordError}</p>}
+				<button type="submit" class="p-2 px-4 text-paper-text bg-paper-bg border border-paper-border rounded hover:border-paper-border-hover transition-colors">Unlock</button>
+			</form>
+		)}
 	</div>
 
 	<script is:inline>

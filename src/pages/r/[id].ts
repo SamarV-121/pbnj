@@ -1,12 +1,13 @@
 import type { APIRoute } from 'astro';
+import { hasPasswordAccess } from '@/lib/password';
 
-export const GET: APIRoute = async ({ params, locals, url }) => {
+export const GET: APIRoute = async ({ params, request, locals, url }) => {
   const { id } = params;
   const runtime = locals.runtime as any;
 
   try {
     const paste = await runtime.env.DB.prepare(
-      'SELECT code, secret_key FROM pastes WHERE id = ? AND (expires_at IS NULL OR expires_at > ?)'
+      'SELECT code, secret_key, password_hash FROM pastes WHERE id = ? AND (expires_at IS NULL OR expires_at > ?)'
     ).bind(id, Date.now()).first();
 
     if (!paste) {
@@ -19,6 +20,11 @@ export const GET: APIRoute = async ({ params, locals, url }) => {
       if (providedKey !== paste.secret_key) {
         return new Response('Not found', { status: 404 });
       }
+    }
+
+    // Check if paste requires a password and this request hasn't unlocked it
+    if (paste.password_hash && !(await hasPasswordAccess(request, runtime.env.DB, runtime.env.AUTH_KEY, id, paste.password_hash))) {
+      return new Response('Not found', { status: 404 });
     }
 
     return new Response(paste.code, {

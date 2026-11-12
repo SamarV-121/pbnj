@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS pastes (
   filename TEXT,
   is_private INTEGER DEFAULT 0,
   secret_key TEXT,
-  expires_at INTEGER
+  expires_at INTEGER,
+  password_hash TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_updated ON pastes(updated DESC);

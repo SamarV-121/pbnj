@@ -43,6 +43,7 @@ The `/new` page provides a simple editor with these options:
 - **Language** - Select language for syntax highlighting (or leave as "auto")
 - **Expiry** - Expire the paste after 10m, 1h, 1d, or 1w (or leave as "never")
 - **Private** - Toggle to make the paste unlisted (won't appear on homepage)
+- **Password** - Shown when Private is on. Viewers must enter it to open the paste (optional)
 - **Save** - Click or press `Cmd/Ctrl + S` to save
 
 ### Keyboard Shortcuts

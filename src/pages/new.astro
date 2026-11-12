@@ -96,6 +96,18 @@ import config from '@/lib/config';
 			</div>
 		</div>
 
+		<!-- Password row (shown when private) -->
+		<div id="password-row" class="mb-3" style="display: none;">
+			<input
+				type="password"
+				id="password"
+				class="w-full p-2 text-paper-text bg-paper-bg2 border border-paper-border rounded"
+				placeholder="password to open this paste (optional)"
+				autocomplete="new-password"
+				style="outline: none;"
+			/>
+		</div>
+
 		<!-- Code editor card -->
 		<div id="editor-wrapper" class="border border-paper-border rounded overflow-hidden bg-paper-bg2" style="transition: border-color 0.3s ease;">
 			<textarea
@@ -125,11 +137,14 @@ import config from '@/lib/config';
 	const lockClosed = document.getElementById('lock-closed') as SVGElement;
 	const createBtn = document.getElementById('create-btn') as HTMLButtonElement;
 	const editorWrapper = document.getElementById('editor-wrapper') as HTMLDivElement;
+	const passwordRow = document.getElementById('password-row') as HTMLDivElement;
+	const passwordInput = document.getElementById('password') as HTMLInputElement;
 
 	let isPrivate = false;
 
 	// Update private button style - just toggle icons, keep same bg as other buttons
 	function updatePrivateButton() {
+		passwordRow.style.display = isPrivate ? 'block' : 'none';
 		if (isPrivate) {
 			lockOpen.style.display = 'none';
 			lockClosed.style.display = 'block';
@@ -186,6 +201,9 @@ import config from '@/lib/config';
 			}
 			if (isPrivate) {
 				body.private = true;
+				if (passwordInput.value) {
+					body.password = passwordInput.value;
+				}
 			}
 
 			const response = await fetch('/api', {
