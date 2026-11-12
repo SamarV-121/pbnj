@@ -54,6 +54,10 @@ const locked =
 	!!paste.password_hash &&
 	!(await hasPasswordAccess(Astro.request, runtime.env.DB, runtime.env.AUTH_KEY, id, paste.password_hash));
 
+// Edit links keep the key the viewer already used, so keyed pastes open after saving
+const editKey = Astro.url.searchParams.get('key');
+const editHref = `/new?edit=${id}` + (editKey ? `&key=${encodeURIComponent(editKey)}` : '');
+
 // Highlight code server-side
 let highlightedCode: string;
 try {
@@ -126,6 +130,15 @@ const codePreview = locked ? '' : paste.code.slice(0, 150).replace(/\n/g, ' ').t
 						<line x1="12" y1="15" x2="12" y2="3"></line>
 					</svg>
 				</button>
+				<a
+					id="edit-btn"
+					href={editHref}
+					class="p-2 text-paper-text bg-paper-bg2 border border-paper-border rounded hover:border-paper-border-hover transition-colors"
+					title="Edit paste"
+					style="display: none;"
+				>
+					Edit
+				</a>
 				<button
 					id="delete-btn"
 					class="p-2 text-paper-text bg-paper-bg2 border border-paper-border rounded hover:border-paper-border-hover transition-colors"
@@ -202,6 +215,18 @@ const codePreview = locked ? '' : paste.code.slice(0, 150).replace(/\n/g, ' ').t
 						</svg>
 						Download
 					</button>
+					<a
+						id="mobile-edit-btn"
+						href={editHref}
+						class="flex items-center gap-3 px-4 py-2 text-paper-text hover:bg-paper-bg2 transition-colors w-full text-left"
+						style="display: none;"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M12 20h9"></path>
+							<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+						</svg>
+						Edit
+					</a>
 					<button
 						id="mobile-delete-btn"
 						class="flex items-center gap-3 px-4 py-2 text-paper-text hover:bg-paper-bg2 transition-colors w-full text-left"
@@ -253,6 +278,10 @@ const codePreview = locked ? '' : paste.code.slice(0, 150).replace(/\n/g, ' ').t
 			const mobileDeleteBtn = document.getElementById('mobile-delete-btn');
 			if (deleteBtn) deleteBtn.style.display = 'block';
 			if (mobileDeleteBtn) mobileDeleteBtn.style.display = 'flex';
+			const editBtn = document.getElementById('edit-btn');
+			const mobileEditBtn = document.getElementById('mobile-edit-btn');
+			if (editBtn) editBtn.style.display = 'block';
+			if (mobileEditBtn) mobileEditBtn.style.display = 'flex';
 		}
 
 		// Mobile menu toggle

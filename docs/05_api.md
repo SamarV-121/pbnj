@@ -102,6 +102,29 @@ Returns recent public pastes.
 }
 ```
 
+### Get Paste
+
+GET /api/{id}
+
+Requires authentication. Returns the paste's content and settings for editing. The password hash and key are never returned.
+
+```bash
+curl https://your-pbnj.workers.dev/api/crunchy-peanut-butter-sandwich \
+  -H "Authorization: Bearer YOUR_AUTH_KEY"
+```
+
+#### Response
+```json
+{
+  "id": "crunchy-peanut-butter-sandwich",
+  "code": "console.log(\"hello\")",
+  "language": "javascript",
+  "filename": "hello.js",
+  "private": true,
+  "hasPassword": true
+}
+```
+
 ### Update Paste
 
 PUT /api/{id}
@@ -121,11 +144,16 @@ curl -X PUT https://your-pbnj.workers.dev/api/crunchy-peanut-butter-sandwich \
 
 #### Request Body (JSON)
 
-| Field    | Type   | Required | Description                      |
-|----------|--------|----------|----------------------------------|
-| code     | string | Yes      | The new content                  |
-| language | string | No       | Language for syntax highlighting |
-| filename | string | No       | Display filename                 |
+| Field    | Type           | Required | Description                                                                                                  |
+|----------|----------------|----------|--------------------------------------------------------------------------------------------------------------|
+| code     | string         | Yes      | The new content                                                                                              |
+| language | string         | No       | Language for syntax highlighting                                                                             |
+| filename | string         | No       | Display filename                                                                                             |
+| private  | boolean        | No       | `true` makes the paste private, `false` makes it public. Turning it off also removes the key and password    |
+| password | string or null | No       | Sets a new password, which also makes the paste private. `null` or `""` removes the password                 |
+| expires  | string or null | No       | Restarts the expiry with a duration (`10m`, `1h`, `1d`, `1w`). `null` or `""` removes the expiry             |
+
+Fields you leave out keep their current values. An invalid `expires` or non-boolean `private` returns 400.
 
 #### Response
 ```json

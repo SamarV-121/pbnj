@@ -106,6 +106,10 @@ import config from '@/lib/config';
 				autocomplete="new-password"
 				style="outline: none;"
 			/>
+			<label id="clear-password-row" class="mt-2 flex items-center gap-2 text-sm text-paper-muted" style="display: none;">
+				<input type="checkbox" id="clear-password" />
+				Remove the current password
+			</label>
 		</div>
 
 		<!-- Code editor card -->
@@ -125,8 +129,13 @@ import config from '@/lib/config';
 	// Check if logged in
 	const isLoggedIn = localStorage.getItem('pbnj_logged_in');
 	if (!isLoggedIn) {
-		window.location.href = '/login?return=' + encodeURIComponent('/new');
+		window.location.href = '/login?return=' + encodeURIComponent(location.pathname + location.search);
 	}
+
+	// ?edit=ID opens an existing paste for editing; ?key= is kept so keyed pastes still open after saving
+	const params = new URLSearchParams(location.search);
+	const editId = params.get('edit');
+	const editKey = params.get('key');
 
 	const codeInput = document.getElementById('code-input') as HTMLTextAreaElement;
 	const filenameInput = document.getElementById('filename') as HTMLInputElement;
@@ -139,6 +148,8 @@ import config from '@/lib/config';
 	const editorWrapper = document.getElementById('editor-wrapper') as HTMLDivElement;
 	const passwordRow = document.getElementById('password-row') as HTMLDivElement;
 	const passwordInput = document.getElementById('password') as HTMLInputElement;
+	const clearPasswordRow = document.getElementById('clear-password-row') as HTMLLabelElement;
+	const clearPasswordInput = document.getElementById('clear-password') as HTMLInputElement;
 
 	let isPrivate = false;
 
@@ -163,6 +174,11 @@ import config from '@/lib/config';
 	// Initialize button style
 	updatePrivateButton();
 
+	// Clearing the password and typing a new one are mutually exclusive
+	clearPasswordInput.addEventListener('change', () => {
+		passwordInput.disabled = clearPasswordInput.checked;
+	});
+
 	function showError() {
 		editorWrapper.style.borderColor = '#a63d40';
 		editorWrapper.classList.add('shake');
@@ -176,7 +192,7 @@ import config from '@/lib/config';
 		}, 2000);
 	}
 
-	async function createPaste() {
+	async function savePaste() {
 		const code = codeInput.value;
 		if (!code.trim()) {
 			showError();
@@ -196,18 +212,23 @@ import config from '@/lib/config';
 			if (languageSelect.value) {
 				body.language = languageSelect.value;
 			}
-			if (expiresSelect.value) {
+			// When editing, "never" clears an existing expiry and "keep" leaves it alone
+			if (editId && expiresSelect.value === '') {
+				body.expires = null;
+			} else if (expiresSelect.value && expiresSelect.value !== 'keep') {
 				body.expires = expiresSelect.value;
 			}
-			if (isPrivate) {
-				body.private = true;
-				if (passwordInput.value) {
-					body.password = passwordInput.value;
-				}
+			if (editId || isPrivate) {
+				body.private = isPrivate;
+			}
+			if (isPrivate && clearPasswordInput.checked) {
+				body.password = null;
+			} else if (isPrivate && passwordInput.value) {
+				body.password = passwordInput.value;
 			}
 
-			const response = await fetch('/api', {
-				method: 'POST',
+			const response = await fetch(editId ? `/api/${encodeURIComponent(editId)}` : '/api', {
+				method: editId ? 'PUT' : 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 				},
@@ -221,7 +242,8 @@ import config from '@/lib/config';
 			}
 
 			const data = await response.json();
-			window.location.href = `/${data.id}`;
+			const keyQuery = editKey && isPrivate ? `?key=${encodeURIComponent(editKey)}` : '';
+			window.location.href = `/${data.id}${keyQuery}`;
 		} catch (err: any) {
 			showError();
 			createBtn.style.opacity = '1';
@@ -229,13 +251,13 @@ import config from '@/lib/config';
 		}
 	}
 
-	createBtn.addEventListener('click', createPaste);
+	createBtn.addEventListener('click', savePaste);
 
 	// Ctrl/Cmd + Enter or Ctrl/Cmd + S to submit
 	codeInput.addEventListener('keydown', (e) => {
 		if ((e.ctrlKey || e.metaKey) && (e.key === 'Enter' || e.key === 's')) {
 			e.preventDefault();
-			createPaste();
+			savePaste();
 		}
 	});
 
@@ -243,9 +265,41 @@ import config from '@/lib/config';
 	document.addEventListener('keydown', (e) => {
 		if ((e.ctrlKey || e.metaKey) && e.key === 's') {
 			e.preventDefault();
-			createPaste();
+			savePaste();
 		}
 	});
+
+	// Prefill the editor with an existing paste
+	async function loadPaste(pasteId: string) {
+		const response = await fetch(`/api/${encodeURIComponent(pasteId)}`, {
+			credentials: 'same-origin', // Include session cookie
+		});
+		if (!response.ok) {
+			window.location.href = '/404';
+			return;
+		}
+
+		const data = await response.json();
+		filenameInput.value = data.filename || '';
+		languageSelect.value = data.language || '';
+		codeInput.value = data.code;
+		isPrivate = data.private;
+		updatePrivateButton();
+
+		// Keep the current expiry unless another option is picked
+		expiresSelect.insertBefore(new Option('keep', 'keep'), expiresSelect.firstChild);
+		expiresSelect.value = 'keep';
+
+		if (data.hasPassword) {
+			clearPasswordRow.style.display = 'flex';
+			passwordInput.placeholder = 'new password (leave empty to keep the current one)';
+		}
+		createBtn.title = 'Save changes';
+	}
+
+	if (editId && isLoggedIn) {
+		loadPaste(editId);
+	}
 
 	// Focus textarea on load
 	codeInput.focus();

@@ -53,6 +53,14 @@ The `/new` page provides a simple editor with these options:
 | `Cmd/Ctrl + S` | Save paste |
 | `Cmd/Ctrl + Enter` | Save paste |
 
+## Editing Pastes
+
+When logged in, an Edit button appears on paste view pages. It opens the editor with the paste's code, filename, language, and privacy setting filled in. Saving updates the same paste, so its URL stays the same.
+
+- **Expiry** - Starts on "keep", which leaves the current expiry unchanged. Pick a duration to restart the clock, or "never" to remove it
+- **Password** - Leave empty to keep the current password, type a new one to change it, or tick "Remove the current password" to clear it
+- **Private** - Turning Private off also removes the paste's password and key
+
 ## Deleting Pastes
 
 When logged in, a trash icon appears on paste view pages. Click it to delete the paste immediately.
