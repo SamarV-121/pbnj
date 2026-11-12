@@ -8,10 +8,12 @@ CREATE TABLE IF NOT EXISTS pastes (
   updated INTEGER NOT NULL,
   filename TEXT,
   is_private INTEGER DEFAULT 0,
-  secret_key TEXT
+  secret_key TEXT,
+  expires_at INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS idx_updated ON pastes(updated DESC);
+CREATE INDEX IF NOT EXISTS idx_pastes_expires_at ON pastes(expires_at);
 
 -- Sessions table for web authentication
 CREATE TABLE IF NOT EXISTS sessions (

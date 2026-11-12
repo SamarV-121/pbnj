@@ -16,10 +16,12 @@ if (config.homepage) {
 		const sortDirection = config.sortOrder === 'oldest' ? 'ASC' : 'DESC';
 
 		// If authenticated, show all pastes including private ones
-		const whereClause = isAuthed ? '' : 'WHERE is_private = 0 OR is_private IS NULL';
+		const whereClause = isAuthed
+			? 'WHERE expires_at IS NULL OR expires_at > ?'
+			: 'WHERE (is_private = 0 OR is_private IS NULL) AND (expires_at IS NULL OR expires_at > ?)';
 		const { results } = await runtime.env.DB.prepare(
 			`SELECT id, language, updated, filename, is_private, SUBSTR(code, 1, 200) as preview FROM pastes ${whereClause} ORDER BY updated ${sortDirection} LIMIT 20`
-		).all();
+		).bind(Date.now()).all();
 
 		pastes = results || [];
 	} catch (error) {

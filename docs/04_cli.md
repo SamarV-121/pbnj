@@ -53,6 +53,7 @@ pbnj - < file.txt
 -f, --filename <name>    Set filename for the paste
 -p, --private            Create a private paste (not listed on homepage)
 -k, --key [key]          Require a key to view (auto-generates if no key given)
+-e, --expire <duration>  Expire after 10m, 1h, 1d, or 1w (new pastes only)
 -n, --no-copy            Don't copy URL to clipboard
 -u, --update <id>        Update an existing paste by ID
 -l, --list [n]           List recent pastes (default: 10, or specify count)
@@ -89,6 +90,12 @@ pbnj -p -k secret.txt
 ### Create a private paste with custom key
 ```bash
 pbnj -p -k "mypassword" secret.txt
+```
+
+### Create a paste that expires
+```bash
+pbnj -e 1h secret.txt
+# Expires one hour after creation. Accepts 10m, 1h, 1d, or 1w.
 ```
 
 ### List recent pastes

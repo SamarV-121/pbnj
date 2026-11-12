@@ -124,6 +124,7 @@ pbnj -d <paste-id>
 | `-l, --list [n]` | List recent pastes (default: 10, or specify count) |
 | `-n, --no-copy` | Don't copy URL to clipboard after creating paste |
 | `-p, --private` | Create a private (unlisted) paste |
+| `-e, --expire <duration>` | Expire the paste after 10m, 1h, 1d, or 1w (new pastes only) |
 | `-s, --secret <key>` | Set a secret key for private paste |
 | `-h, --help` | Show help |
 | `-v, --version` | Show version |

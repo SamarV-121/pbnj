@@ -28,6 +28,7 @@ _pbnj is a simple, minimal self-hosted pastebin solution, focused on getting you
 - ⌨️ **CLI-first** — `pbnj file.py` and you're done
 - 🌐 **Web interface** — create and delete pastes from the browser too
 - 🔒 **Private pastes** — unlisted pastes with optional secret keys
+- ⏳ **Expiring pastes** — pick a lifetime (10m, 1h, 1d, 1w) and it disappears on its own
 - ☁️ **Edge-powered** — fast globally, free forever on Cloudflare
 - ...and many more!
 
@@ -129,7 +130,6 @@ pbnj is opinionated. These features are **not bugs**—they're deliberate choice
 - **No multi-user support** — Fork it and run your own.
 - **No comments/discussions** — Share code, not conversations.
 - **No folders/organization** — The homepage is your feed.
-- **No expiring pastes** — Your pastes live forever (or until you delete them).
 
 If you need these features, check out [Opengist](https://github.com/thomiceli/opengist) or [PrivateBin](https://github.com/PrivateBin/PrivateBin)—they're great projects that take a different approach.
 

@@ -51,13 +51,15 @@ curl -X POST https://your-pbnj.workers.dev/api \
 | filename | string  | No       | Display filename                     |
 | private  | boolean | No       | If true, not listed on homepage      |
 | key      | string/boolean | No | Secret key (true = auto-generate) |
+| expires  | string  | No       | Lifetime: `10m`, `1h`, `1d`, or `1w`. Expired pastes return 404 |
 
 #### Response
 ```json
 {
   "id": "crunchy-peanut-butter-sandwich",
   "url": "https://your-pbnj.workers.dev/crunchy-peanut-butter-sandwich",
-  "private": false
+  "private": false,
+  "expiresAt": null
 }
 ```
 
@@ -66,7 +68,8 @@ With key:
 {
   "id": "crunchy-peanut-butter-sandwich",
   "url": "https://your-pbnj.workers.dev/crunchy-peanut-butter-sandwich?key=abc123",
-  "private": true
+  "private": true,
+  "expiresAt": null
 }
 ```
 

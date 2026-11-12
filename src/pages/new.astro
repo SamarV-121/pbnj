@@ -49,6 +49,20 @@ import config from '@/lib/config';
 					<option value="plaintext">Text</option>
 				</select>
 
+				<!-- Expiry selector -->
+				<select
+					id="expires"
+					class="p-2 text-paper-text bg-paper-bg2 border border-paper-border rounded hover:border-paper-border-hover transition-colors cursor-pointer"
+					title="Expire paste"
+					style="outline: none;"
+				>
+					<option value="">never</option>
+					<option value="10m">10m</option>
+					<option value="1h">1h</option>
+					<option value="1d">1d</option>
+					<option value="1w">1w</option>
+				</select>
+
 				<!-- Private toggle -->
 				<button
 					id="private-btn"
@@ -105,6 +119,7 @@ import config from '@/lib/config';
 	const codeInput = document.getElementById('code-input') as HTMLTextAreaElement;
 	const filenameInput = document.getElementById('filename') as HTMLInputElement;
 	const languageSelect = document.getElementById('language') as HTMLSelectElement;
+	const expiresSelect = document.getElementById('expires') as HTMLSelectElement;
 	const privateBtn = document.getElementById('private-btn') as HTMLButtonElement;
 	const lockOpen = document.getElementById('lock-open') as SVGElement;
 	const lockClosed = document.getElementById('lock-closed') as SVGElement;
@@ -165,6 +180,9 @@ import config from '@/lib/config';
 			}
 			if (languageSelect.value) {
 				body.language = languageSelect.value;
+			}
+			if (expiresSelect.value) {
+				body.expires = expiresSelect.value;
 			}
 			if (isPrivate) {
 				body.private = true;

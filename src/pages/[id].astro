@@ -10,8 +10,8 @@ let paste: any = null;
 
 try {
 	const result = await runtime.env.DB.prepare(
-		'SELECT * FROM pastes WHERE id = ?'
-	).bind(id).first();
+		'SELECT * FROM pastes WHERE id = ? AND (expires_at IS NULL OR expires_at > ?)'
+	).bind(id, Date.now()).first();
 
 	paste = result;
 } catch (error) {

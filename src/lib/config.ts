@@ -76,4 +76,27 @@ export function parseSize(size: string): number {
   return Math.floor(value * multipliers[unit]);
 }
 
+/**
+ * Parse expiry duration to milliseconds
+ * @param duration - Duration string like '10m', '1h', '1d', '1w'
+ * @returns Duration in milliseconds, or null if invalid
+ */
+export function parseDuration(duration: string): number | null {
+  const match = duration.toLowerCase().match(/^(\d+)([smhdw])$/);
+  if (!match) return null;
+
+  const value = parseInt(match[1], 10);
+
+  const multipliers: Record<string, number> = {
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+    w: 7 * 24 * 60 * 60 * 1000,
+  };
+
+  const ms = value * multipliers[match[2]];
+  return value > 0 && Number.isSafeInteger(ms) ? ms : null;
+}
+
 export default config;

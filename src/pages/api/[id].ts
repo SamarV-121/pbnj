@@ -29,9 +29,9 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     // Update the paste and timestamp
     const updated = Date.now();
     const result = await runtime.env.DB.prepare(
-      'UPDATE pastes SET code = ?, language = COALESCE(?, language), filename = COALESCE(?, filename), updated = ? WHERE id = ?'
+      'UPDATE pastes SET code = ?, language = COALESCE(?, language), filename = COALESCE(?, filename), updated = ? WHERE id = ? AND (expires_at IS NULL OR expires_at > ?)'
     )
-      .bind(code, language || null, filename || null, updated, id)
+      .bind(code, language || null, filename || null, updated, id, updated)
       .run();
 
     if (result.meta.changes === 0) {

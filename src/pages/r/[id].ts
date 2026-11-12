@@ -6,8 +6,8 @@ export const GET: APIRoute = async ({ params, locals, url }) => {
 
   try {
     const paste = await runtime.env.DB.prepare(
-      'SELECT code, secret_key FROM pastes WHERE id = ?'
-    ).bind(id).first();
+      'SELECT code, secret_key FROM pastes WHERE id = ? AND (expires_at IS NULL OR expires_at > ?)'
+    ).bind(id, Date.now()).first();
 
     if (!paste) {
       return new Response('Not found', { status: 404 });

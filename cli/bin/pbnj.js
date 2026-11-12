@@ -157,6 +157,7 @@ Options:
   -f, --filename <name>    Set filename for the paste
   -p, --private            Create a private paste (not listed on homepage)
   -k, --key [key]          Require a key to view (auto-generates if no key given)
+  -e, --expire <duration>  Expire after 10m, 1h, 1d, or 1w (new pastes only)
   -n, --no-copy            Don't copy URL to clipboard
   -u, --update <id>        Update an existing paste by ID
   -l, --list [n]           List recent pastes (default: 10)
@@ -178,6 +179,7 @@ Examples:
   pbnj -p script.py                 # Upload as private (unlisted)
   pbnj -p -k script.py              # Private with auto-generated key
   pbnj -p -k "mykey" script.py      # Private with custom key
+  pbnj -e 1h script.py              # Upload, expires in 1 hour
   pbnj -u crunchy-peanut-butter file.py  # Update a paste
   pbnj -l                           # Show recent pastes
   pbnj -d crunchy-peanut-butter     # Delete a paste
@@ -440,6 +442,7 @@ async function uploadPaste(code, language, filename, config, options = {}) {
   if (filename) body.filename = filename;
   if (options.isPrivate) body.private = true;
   if (options.secretKey) body.key = options.secretKey;
+  if (options.expires) body.expires = options.expires;
 
   try {
     const response = await fetch(`${host}/api`, {
@@ -474,6 +477,7 @@ async function main() {
   let inputFile = null;
   let isPrivate = false;
   let secretKey = null;
+  let expires = null;
   let updateId = null;
   let noCopy = false;
 
@@ -555,6 +559,15 @@ async function main() {
       continue;
     }
 
+    if (arg === '-e' || arg === '--expire') {
+      expires = args[++i];
+      if (!expires) {
+        console.error('Error: Duration required for --expire (e.g. 10m, 1h, 1d, 1w)');
+        process.exit(1);
+      }
+      continue;
+    }
+
     if (arg === '-n' || arg === '--no-copy') {
       noCopy = true;
       continue;
@@ -627,11 +640,15 @@ async function main() {
     url = await uploadPaste(code, language, filename, config, {
       isPrivate,
       secretKey,
+      expires,
     });
 
     console.log(url);
     if (isPrivate) {
       console.log('🔒 [private paste - not listed on homepage]');
+    }
+    if (expires) {
+      console.log(`⏳ [expires in ${expires}]`);
     }
   }
 

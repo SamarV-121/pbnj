@@ -25,6 +25,7 @@ That's it. You now have your own pastebin.
 - CLI tool for terminal workflows
 - Web interface for creating and deleting pastes
 - Private pastes with optional secret keys
+- Expiring pastes (10m, 1h, 1d, or 1w)
 - Download and copy buttons
 - Social media preview cards
 

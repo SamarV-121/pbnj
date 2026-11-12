@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { generateId } from '@/lib/id';
-import config, { parseSize } from '@/lib/config';
+import config, { parseSize, parseDuration } from '@/lib/config';
 import { isAuthenticated } from '@/lib/auth';
 
 // Detect language from filename extension
@@ -78,9 +78,9 @@ export const GET: APIRoute = async ({ url, locals }) => {
     const sortDirection = config.sortOrder === 'oldest' ? 'ASC' : 'DESC';
 
     const { results } = await runtime.env.DB.prepare(
-      `SELECT id, language, updated, filename, SUBSTR(code, 1, 200) as preview FROM pastes WHERE is_private = 0 OR is_private IS NULL ORDER BY updated ${sortDirection} LIMIT ? OFFSET ?`
+      `SELECT id, language, updated, filename, SUBSTR(code, 1, 200) as preview FROM pastes WHERE (is_private = 0 OR is_private IS NULL) AND (expires_at IS NULL OR expires_at > ?) ORDER BY updated ${sortDirection} LIMIT ? OFFSET ?`
     )
-      .bind(limit, cursor)
+      .bind(Date.now(), limit, cursor)
       .all();
 
     return new Response(
@@ -161,6 +161,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     let filename: string | undefined;
     let isPrivate = false;
     let secretKey: string | null = null;
+    let expires: unknown;
 
     // Check content type to determine how to parse the request
     const contentType = request.headers.get('Content-Type') || '';
@@ -192,6 +193,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         secretKey = keyParam === 'true' ? generateSecretKey() : keyParam;
         isPrivate = true; // If key is provided, paste is automatically private
       }
+      expires = formData.get('expires');
     } else if (contentType.includes('application/json')) {
       // Handle JSON (original format)
       const body = await request.json();
@@ -199,6 +201,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       language = body.language;
       filename = body.filename;
       isPrivate = body.private === true;
+      expires = body.expires;
 
       // Handle key: true (auto-generate) or key: "custom-key"
       if (body.key) {
@@ -235,6 +238,24 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
+    // Parse expiry duration (e.g. 10m, 1h, 1d, 1w)
+    let expiresAt: number | null = null;
+    if (expires) {
+      const ttl = typeof expires === 'string' ? parseDuration(expires) : null;
+      if (ttl === null) {
+        return new Response(JSON.stringify({ error: 'Invalid expires value. Use a duration like 10m, 1h, 1d, or 1w.' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      expiresAt = Date.now() + ttl;
+    }
+
+    // Remove expired pastes so they don't accumulate in D1
+    await runtime.env.DB.prepare('DELETE FROM pastes WHERE expires_at IS NOT NULL AND expires_at <= ?')
+      .bind(Date.now())
+      .run();
+
     // Generate filename if not provided
     if (!filename || filename.trim() === '') {
       filename = await generateSnippetFilename(runtime.env.DB);
@@ -251,9 +272,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
       try {
         await runtime.env.DB.prepare(
-          'INSERT INTO pastes (id, code, language, updated, filename, is_private, secret_key) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          'INSERT INTO pastes (id, code, language, updated, filename, is_private, secret_key, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         )
-          .bind(id, code, lang, updated, filename, isPrivate ? 1 : 0, secretKey)
+          .bind(id, code, lang, updated, filename, isPrivate ? 1 : 0, secretKey, expiresAt)
           .run();
 
         // Success - return the response
@@ -265,6 +286,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
             id,
             url,
             private: isPrivate,
+            expiresAt,
           }),
           {
             status: 201,
