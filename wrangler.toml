@@ -3,6 +3,11 @@ main = "dist/_worker.js/index.js"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Custom domain
+routes = [
+  { pattern = "paste.samarv121.dev", zone_name = "samarv121.dev", custom_domain = true }
+]
+
 # Static assets
 [assets]
 directory = "./dist"
