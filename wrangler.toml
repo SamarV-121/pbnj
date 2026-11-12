@@ -11,7 +11,7 @@ directory = "./dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "pbnj-db"
-database_id = "e17c6a9a-14f3-4eb6-8282-293ef8ae8cb2"
+database_id = "ca9a1e37-71a2-44b8-afcd-f67d6bc7c554"
 
 # Environment variables (set AUTH_KEY in Cloudflare dashboard or .dev.vars locally)
 
