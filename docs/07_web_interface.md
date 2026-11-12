@@ -74,6 +74,10 @@ Use the Image button on `/new` (or drag image files onto the editor) to add imag
 
 Images follow the paste's privacy. A keyed or password-protected paste requires the same key or unlock to see its images. Images that aren't saved to a paste within 24 hours are deleted.
 
+## Markdown Preview
+
+On `/new`, set the language to MD and a **Preview** button appears. It shows the note rendered as Markdown beside the editor, and updates as you type, including inserted images. Click **Hide preview** to return to the full-width editor.
+
 ## Deleting Pastes
 
 When logged in, a trash icon appears on paste view pages. Click it to delete the paste immediately.

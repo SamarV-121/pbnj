@@ -88,6 +88,18 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 				</button>
 				<input type="file" id="image-input" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden />
 
+				<!-- Markdown preview toggle (only shown for MD notes) -->
+				<button
+					id="preview-btn"
+					type="button"
+					class="p-2 px-4 text-paper-text bg-paper-bg2 border border-paper-border rounded hover:border-paper-border-hover transition-colors"
+					title="Show side-by-side preview"
+					aria-pressed="false"
+					hidden
+				>
+					Preview
+				</button>
+
 				<!-- Private toggle -->
 				<button
 					id="private-btn"
@@ -138,14 +150,15 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 		</div>
 
 		<!-- Code editor card -->
-		<div id="editor-wrapper" class="border border-paper-border rounded overflow-hidden bg-paper-bg2" style="transition: border-color 0.3s ease;">
+		<div id="editor-wrapper" class="border border-paper-border rounded overflow-hidden bg-paper-bg2 flex" style="transition: border-color 0.3s ease;">
 			<textarea
 				id="code-input"
-				class="w-full bg-paper-bg2 text-paper-text resize-none"
+				class="flex-1 min-w-0 bg-paper-bg2 text-paper-text resize-none"
 				placeholder="paste your code here..."
 				spellcheck="false"
 				style="min-height: 480px; padding: 1.5rem; outline: none; line-height: 1.625; font-family: 'SF Mono', Monaco, 'Courier New', monospace; font-size: 0.875rem;"
 			></textarea>
+			<div id="markdown-preview" class="markdown-body flex-1 min-w-0 overflow-auto p-6 border-l border-paper-border text-paper-text" hidden></div>
 		</div>
 
 		<!-- Uploaded images; Markdown notes also get a reference inserted at the cursor -->
@@ -186,11 +199,14 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 	const imageBtn = document.getElementById('image-btn') as HTMLButtonElement;
 	const imageInput = document.getElementById('image-input') as HTMLInputElement;
 	const imageList = document.getElementById('image-list') as HTMLDivElement;
+	const previewBtn = document.getElementById('preview-btn') as HTMLButtonElement;
+	const markdownPreview = document.getElementById('markdown-preview') as HTMLDivElement;
 
 	let isPrivate = false;
 	// Attached image IDs in display order, and how many uploads are in flight
 	let images: string[] = [];
 	let pendingUploads = 0;
+	let showPreview = false;
 
 	// Update private button style - just toggle icons, keep same bg as other buttons
 	function updatePrivateButton() {
@@ -334,6 +350,7 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 		filenameInput.value = data.filename || '';
 		languageSelect.value = data.language || '';
 		codeInput.value = data.code;
+		updatePreviewControls();
 		images = Array.isArray(data.images) ? data.images : [];
 		renderImages();
 		isPrivate = data.private;
@@ -385,6 +402,7 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 		// Drop Markdown references so the note doesn't point at a deleted image
 		const reference = new RegExp(`!\\[[^\\]]*\\]\\(/i/${imageId}[^)]*\\)\\n?`, 'g');
 		codeInput.value = codeInput.value.replace(reference, '');
+		refreshPreview();
 		renderImages();
 	}
 
@@ -393,6 +411,7 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 		const end = codeInput.selectionEnd;
 		codeInput.value = codeInput.value.slice(0, start) + text + codeInput.value.slice(end);
 		codeInput.selectionStart = codeInput.selectionEnd = start + text.length;
+		refreshPreview();
 		codeInput.focus();
 	}
 
@@ -483,6 +502,32 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 		e.preventDefault();
 		uploadFiles(Array.from(e.dataTransfer.files));
 	});
+
+	// markdown-it escapes raw HTML (html: false), so setting innerHTML is safe
+	async function refreshPreview() {
+		if (!showPreview) return;
+		// Loaded on first use so the editor doesn't pull in the renderer until the preview is opened
+		const { renderMarkdown } = await import('../lib/markdown');
+		markdownPreview.innerHTML = renderMarkdown(codeInput.value, editKey);
+	}
+
+	function updatePreviewControls() {
+		const isMarkdown = languageSelect.value === 'markdown';
+		if (!isMarkdown) showPreview = false;
+		previewBtn.hidden = !isMarkdown;
+		previewBtn.textContent = showPreview ? 'Hide preview' : 'Preview';
+		previewBtn.setAttribute('aria-pressed', String(showPreview));
+		markdownPreview.hidden = !showPreview;
+		refreshPreview();
+	}
+
+	previewBtn.addEventListener('click', () => {
+		showPreview = !showPreview;
+		updatePreviewControls();
+	});
+	languageSelect.addEventListener('change', updatePreviewControls);
+	codeInput.addEventListener('input', refreshPreview);
+	updatePreviewControls();
 
 	// Focus textarea on load
 	codeInput.focus();
