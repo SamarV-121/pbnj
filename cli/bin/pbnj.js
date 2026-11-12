@@ -10,6 +10,19 @@ const execAsync = promisify(exec);
 // Configuration
 const CONFIG_FILE = `${process.env.HOME}/.pbnj`;
 
+const MAX_IMAGES_PER_PASTE = 20;
+const MAX_IMAGE_BYTES = 1_990_000;
+const BULK_DELETE_LIMIT = 50;
+
+// Image types the server accepts, by file extension
+const IMAGE_TYPES = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+};
+
 // Language detection from file extension
 const LANG_MAP = {
   '.js': 'javascript',
@@ -137,6 +150,11 @@ function showConfig() {
   }
 }
 
+function fail(message) {
+  console.error(`Error: ${message}`);
+  process.exit(1);
+}
+
 function showHelp() {
   console.log(`
 pbnj - CLI for pbnj.sh pastebin
@@ -147,7 +165,7 @@ Usage:
   cat file | pbnj          Pipe content
   pbnj -u <id> <file>      Update an existing paste
   pbnj -l [n]              List recent pastes (default: 10, or specify count)
-  pbnj -d <id>             Delete a paste
+  pbnj -d <id> [id...]     Delete one or more pastes
   pbnj -D                  Delete all pastes
   pbnj --init              Configure your pbnj instance
   pbnj --show-config       Show current configuration
@@ -155,13 +173,20 @@ Usage:
 Options:
   -L, --language <lang>    Override language detection
   -f, --filename <name>    Set filename for the paste
-  -p, --private            Create a private paste (not listed on homepage)
-  -k, --key [key]          Require a key to view (auto-generates if no key given)
-  -e, --expire <duration>  Expire after 10m, 1h, 1d, or 1w (new pastes only)
+  -p, --private            Make private (not listed on homepage)
+  -k, --key [key]          Require a key to view (auto-generates if no key given; new pastes only)
+  -P, --password <pw>      Password-protect the paste (makes it private)
+  -U, --unlisted           Public, but hidden from the homepage (update: also clears key and password)
+  -e, --expire <duration>  Expire after 10m, 1h, 1d, or 1w
+  -r, --max-reads <n>      Self-destruct after n reads (new pastes only)
+  -i, --image <file>       Attach an image: PNG, JPEG, WebP, or GIF (up to 20 per paste; repeatable)
+  --public                 Make a paste public (update only; clears key and password)
+  --clear-password         Remove the password (update only)
+  --no-expire              Remove the expiry (update only)
   -n, --no-copy            Don't copy URL to clipboard
   -u, --update <id>        Update an existing paste by ID
   -l, --list [n]           List recent pastes (default: 10)
-  -d, --delete <id>        Delete a paste by ID
+  -d, --delete <id>        Delete one or more pastes by ID
   -D, --delete-all         Delete all pastes
   -h, --help               Show this help
   -v, --version            Show version
@@ -179,10 +204,17 @@ Examples:
   pbnj -p script.py                 # Upload as private
   pbnj -p -k script.py              # Private with auto-generated key
   pbnj -p -k "mykey" script.py      # Private with custom key
+  pbnj -P hunter2 script.py         # Password-protected
+  pbnj -U script.py                 # Unlisted: public, but not on the homepage for visitors
+  pbnj -r 3 script.py               # Self-destructs after 3 reads
   pbnj -e 1h script.py              # Upload, expires in 1 hour
+  pbnj -i diagram.png notes.md      # Attach an image (Markdown notes also get an inline reference)
   pbnj -u crunchy-peanut-butter file.py  # Update a paste
+  pbnj -u crunchy-peanut-butter -e 1d file.py  # Update a paste and expire it in 1 day
+  pbnj -u crunchy-peanut-butter --public file.py  # Make an existing paste public
   pbnj -l                           # Show recent pastes
   pbnj -d crunchy-peanut-butter     # Delete a paste
+  pbnj -d id1 id2 id3               # Delete several pastes
 `);
 }
 
@@ -315,7 +347,7 @@ async function deletePaste(id, config) {
   }
 }
 
-async function updatePaste(id, code, language, filename, config) {
+async function updatePaste(id, code, language, filename, config, options = {}) {
   const host = process.env.PBNJ_HOST || config.PBNJ_HOST;
   const authKey = process.env.PBNJ_AUTH_KEY || config.PBNJ_AUTH_KEY;
 
@@ -334,6 +366,20 @@ async function updatePaste(id, code, language, filename, config) {
   const body = { code };
   if (language) body.language = language;
   if (filename) body.filename = filename;
+  // Omitted fields keep their current values, so only send visibility when asked for
+  if (options.makePublic) {
+    body.private = false;
+    body.unlisted = false;
+  } else if (options.isPrivate) {
+    body.private = true;
+  } else if (options.isUnlisted) {
+    body.unlisted = true;
+  }
+  if (options.password) body.password = options.password;
+  else if (options.clearPassword) body.password = null;
+  if (options.expires) body.expires = options.expires;
+  else if (options.clearExpires) body.expires = null;
+  if (options.imageIds) body.images = options.imageIds;
 
   try {
     const response = await fetch(`${host}/api/${id}`, {
@@ -441,8 +487,12 @@ async function uploadPaste(code, language, filename, config, options = {}) {
   const body = { code, language };
   if (filename) body.filename = filename;
   if (options.isPrivate) body.private = true;
+  if (options.isUnlisted) body.unlisted = true;
   if (options.secretKey) body.key = options.secretKey;
+  if (options.password) body.password = options.password;
   if (options.expires) body.expires = options.expires;
+  if (options.maxReads) body.maxReads = Number(options.maxReads);
+  if (options.imageIds) body.images = options.imageIds;
 
   try {
     const response = await fetch(`${host}/api`, {
@@ -468,6 +518,113 @@ async function uploadPaste(code, language, filename, config, options = {}) {
   }
 }
 
+function getConnection(config) {
+  const host = process.env.PBNJ_HOST || config.PBNJ_HOST;
+  const authKey = process.env.PBNJ_AUTH_KEY || config.PBNJ_AUTH_KEY;
+
+  if (!host) fail('No host configured. Run `pbnj --init` or set PBNJ_HOST environment variable.');
+  if (!authKey) fail('No auth key configured. Run `pbnj --init` or set PBNJ_AUTH_KEY environment variable.');
+
+  return { host, authKey };
+}
+
+async function deletePastes(ids, config) {
+  if (ids.length === 1) {
+    await deletePaste(ids[0], config);
+    return;
+  }
+
+  const { host, authKey } = getConnection(config);
+  let deleted = 0;
+
+  for (let i = 0; i < ids.length; i += BULK_DELETE_LIMIT) {
+    try {
+      const response = await fetch(`${host}/api/bulk-delete`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ids: ids.slice(i, i + BULK_DELETE_LIMIT) }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        fail(error.error || response.statusText);
+      }
+
+      const result = await response.json();
+      deleted += result.deleted;
+    } catch (err) {
+      fail(err.message);
+    }
+  }
+
+  console.log(`🗑️  [deleted: ${deleted} of ${ids.length}]`);
+}
+
+function readImage(file) {
+  if (!existsSync(file)) fail(`File not found: ${file}`);
+
+  const type = IMAGE_TYPES[extname(file).toLowerCase()];
+  if (!type) fail(`Unsupported image type: ${file} (use PNG, JPEG, WebP, or GIF)`);
+
+  const data = readFileSync(file);
+  if (data.length > MAX_IMAGE_BYTES) fail(`Image too large: ${file} (max ${MAX_IMAGE_BYTES} bytes)`);
+
+  return { name: basename(file), type, data };
+}
+
+async function uploadImage(image, config) {
+  const { host, authKey } = getConnection(config);
+  const form = new FormData();
+  form.append('file', new Blob([image.data], { type: image.type }), image.name);
+
+  try {
+    const response = await fetch(`${host}/api/images`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authKey}` },
+      body: form,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      fail(error.error || response.statusText);
+    }
+
+    const result = await response.json();
+    return result.id;
+  } catch (err) {
+    fail(err.message);
+  }
+}
+
+async function fetchImageIds(id, config) {
+  const { host, authKey } = getConnection(config);
+
+  try {
+    const response = await fetch(`${host}/api/${id}`, {
+      headers: { 'Authorization': `Bearer ${authKey}` },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      fail(error.error || response.statusText);
+    }
+
+    const result = await response.json();
+    return result.images;
+  } catch (err) {
+    fail(err.message);
+  }
+}
+
+function appendImageRefs(code, ids) {
+  const refs = ids.map((id) => `![image](/i/${id})`).join('\n');
+  const separator = code.endsWith('\n') ? '\n' : '\n\n';
+  return `${code}${separator}${refs}\n`;
+}
+
 async function main() {
   const args = process.argv.slice(2);
 
@@ -480,6 +637,13 @@ async function main() {
   let expires = null;
   let updateId = null;
   let noCopy = false;
+  let isUnlisted = false;
+  let password = null;
+  let clearPassword = false;
+  let maxReads = null;
+  let makePublic = false;
+  let clearExpires = false;
+  const imageFiles = [];
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -525,13 +689,16 @@ async function main() {
     }
 
     if (arg === '-d' || arg === '--delete') {
-      const id = args[++i];
-      if (!id) {
+      const ids = [];
+      while (i + 1 < args.length && !args[i + 1].startsWith('-')) {
+        ids.push(args[++i]);
+      }
+      if (ids.length === 0) {
         console.error('Error: Paste ID required for delete');
         process.exit(1);
       }
       const config = getConfig();
-      await deletePaste(id, config);
+      await deletePastes(ids, config);
       process.exit(0);
     }
 
@@ -568,6 +735,53 @@ async function main() {
       continue;
     }
 
+    if (arg === '-U' || arg === '--unlisted') {
+      isUnlisted = true;
+      continue;
+    }
+
+    if (arg === '-P' || arg === '--password') {
+      password = args[++i];
+      if (!password) {
+        fail('Password required for --password');
+      }
+      isPrivate = true; // A password makes the paste private
+      continue;
+    }
+
+    if (arg === '-r' || arg === '--max-reads') {
+      maxReads = args[++i];
+      // The server treats a non-numeric value as "no limit", so reject it here
+      if (!maxReads || !/^\d+$/.test(maxReads)) {
+        fail('Read count required for --max-reads (1 to 1000000)');
+      }
+      continue;
+    }
+
+    if (arg === '-i' || arg === '--image') {
+      const file = args[++i];
+      if (!file) {
+        fail('File required for --image');
+      }
+      imageFiles.push(file);
+      continue;
+    }
+
+    if (arg === '--public') {
+      makePublic = true;
+      continue;
+    }
+
+    if (arg === '--clear-password') {
+      clearPassword = true;
+      continue;
+    }
+
+    if (arg === '--no-expire') {
+      clearExpires = true;
+      continue;
+    }
+
     if (arg === '-n' || arg === '--no-copy') {
       noCopy = true;
       continue;
@@ -600,6 +814,21 @@ async function main() {
     }
   }
 
+  // Reject flag combinations the server would ignore or contradict
+  if (updateId) {
+    if (secretKey) fail('-k applies to new pastes only');
+    if (maxReads) fail('-r applies to new pastes only');
+  } else {
+    if (makePublic) fail('--public only works with -u');
+    if (clearPassword) fail('--clear-password only works with -u');
+    if (clearExpires) fail('--no-expire only works with -u');
+  }
+  if (makePublic && (isPrivate || isUnlisted)) fail('--public cannot be combined with -p, -P, -k, or -U');
+  if (isUnlisted && isPrivate) fail('-U cannot be combined with -p, -P, or -k');
+  if (clearPassword && password) fail('--clear-password cannot be combined with -P');
+  if (clearExpires && expires) fail('--no-expire cannot be combined with -e');
+  if (imageFiles.length > MAX_IMAGES_PER_PASTE) fail(`A paste can have at most ${MAX_IMAGES_PER_PASTE} images`);
+
   const config = getConfig();
   let code;
 
@@ -629,27 +858,73 @@ async function main() {
     process.exit(1);
   }
 
+  // Check every image before uploading anything
+  const images = imageFiles.map(readImage);
+  let imageIds;
+  let imageUrls = [];
+  if (images.length > 0) {
+    const { host } = getConnection(config);
+    // The server replaces the image list on update, so keep the existing images
+    const existingIds = updateId ? await fetchImageIds(updateId, config) : [];
+    if (existingIds.length + images.length > MAX_IMAGES_PER_PASTE) {
+      fail(`A paste can have at most ${MAX_IMAGES_PER_PASTE} images (it already has ${existingIds.length})`);
+    }
+
+    const newIds = [];
+    for (const image of images) {
+      newIds.push(await uploadImage(image, config));
+    }
+    imageIds = [...existingIds, ...newIds];
+    imageUrls = newIds.map((id) => `${host}/i/${id}`);
+    if (language === 'markdown') {
+      code = appendImageRefs(code, newIds);
+    }
+  }
+
   let url;
   if (updateId) {
     // Update existing paste
-    url = await updatePaste(updateId, code, language, filename, config);
+    url = await updatePaste(updateId, code, language, filename, config, {
+      isPrivate,
+      isUnlisted,
+      makePublic,
+      password,
+      clearPassword,
+      expires,
+      clearExpires,
+      imageIds,
+    });
     console.log(url);
     console.log('✏️  [updated]');
   } else {
     // Create new paste
     url = await uploadPaste(code, language, filename, config, {
       isPrivate,
+      isUnlisted,
       secretKey,
+      password,
       expires,
+      maxReads,
+      imageIds,
     });
 
     console.log(url);
     if (isPrivate) {
       console.log('🔒 [private paste - not listed on homepage]');
     }
+    if (isUnlisted) {
+      console.log('🔗 [unlisted - public, but not listed on homepage for visitors]');
+    }
     if (expires) {
       console.log(`⏳ [expires in ${expires}]`);
     }
+    if (maxReads) {
+      console.log(`👁️  [self-destructs after ${maxReads} reads]`);
+    }
+  }
+
+  for (const imageUrl of imageUrls) {
+    console.log(`🖼️  [image: ${imageUrl}]`);
   }
 
   // Try to copy to clipboard (unless --no-copy)
