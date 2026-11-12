@@ -70,7 +70,7 @@ function highlightPreview(code: string, language: string): string {
 					</div>
 					<div class="py-2.5 bg-paper-bg">
 						<div class="text-sm font-medium text-paper-text leading-tight mb-0.5 flex items-center gap-1.5">
-							{paste.is_private === 1 && <span class="text-paper-muted" title="Private">🔒</span>}
+							{paste.is_private === 1 && <span class="text-paper-muted" title="Private">Private</span>}
 							<span>{paste.filename || `${paste.id}.${paste.language}`}</span>
 						</div>
 						<div class="text-xs text-paper-muted leading-tight">

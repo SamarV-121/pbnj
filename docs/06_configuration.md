@@ -13,11 +13,6 @@ export default {
   sortOrder: 'newest',
   maxPasteSize: '1mb',
   theme: 'flexoki-light',
-  icons: {
-    login: '/peanut.png',
-    logout: '/jelly.png',
-    newPaste: '/bread.png',
-  },
 }
 ```
 
@@ -100,27 +95,6 @@ Theme preset that controls syntax highlighting and UI colors. All themes use loc
 | `catppuccin-frappe` | Catppuccin mid-dark variant |
 | `catppuccin-macchiato` | Catppuccin darker variant |
 | `catppuccin-mocha` | Catppuccin darkest variant |
-
-### `icons`
-- **Type:** `{ login: string, logout: string, newPaste: string }`
-- **Default:** `{ login: '/peanut.png', logout: '/jelly.png', newPaste: '/bread.png' }`
-
-Custom icons for the authentication buttons in the header. Place your icons in the `public/` directory.
-
-| Property | Description |
-|----------|-------------|
-| `login` | Icon shown when logged out (click to login) |
-| `logout` | Icon shown when logged in (click to logout) |
-| `newPaste` | Icon for creating a new paste (only visible when logged in) |
-
-Example:
-```js
-icons: {
-  login: '/my-login-icon.png',
-  logout: '/my-logout-icon.png',
-  newPaste: '/my-new-icon.png',
-}
-```
 
 ### `footer`
 - **Type:** `{ text: string, link?: string }` or `undefined`

@@ -6,12 +6,6 @@ export interface FooterConfig {
   link?: string;
 }
 
-export interface IconsConfig {
-  login: string;
-  logout: string;
-  newPaste: string;
-}
-
 export interface PbnjConfig {
   name: string;
   logo: string;
@@ -20,7 +14,6 @@ export interface PbnjConfig {
   maxPasteSize: string;
   theme: string;
   sortOrder: 'newest' | 'oldest';
-  icons: IconsConfig;
   footer?: FooterConfig;
 }
 
@@ -32,11 +25,6 @@ const defaults: PbnjConfig = {
   maxPasteSize: '1mb',
   theme: defaultTheme,
   sortOrder: 'newest',
-  icons: {
-    login: '/peanut.png',
-    logout: '/jelly.png',
-    newPaste: '/bread.png',
-  },
   footer: {
     text: 'spread the code 🥪',
     link: 'https://github.com/bhavnicksm/pbnj',

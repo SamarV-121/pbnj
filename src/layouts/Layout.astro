@@ -49,28 +49,20 @@ const hljsStylePath = `/styles/hljs-${config.theme}.css`;
 				</a>
 				<div class="flex items-center gap-3">
 					<!-- New paste button (only visible when logged in) -->
-					<a id="new-paste-btn" href="/new" class="hover:opacity-70 transition-opacity" title="New paste" style="display: none;">
-						<img src={config.icons.newPaste} alt="New paste" class="h-8 w-auto" loading="eager" />
-					</a>
+					<a id="new-paste-btn" href="/new" class="px-3 py-2 text-sm text-paper-text bg-paper-bg2 border border-paper-border rounded hover:border-paper-border-hover transition-colors" title="New paste" style="display: none;">New paste</a>
 					<!-- Auth button: login/logout -->
-					<button id="auth-btn" class="hover:opacity-70 transition-opacity" title="Login" data-login-icon={config.icons.login} data-logout-icon={config.icons.logout}>
-						<img id="auth-img" src={config.icons.login} alt="Login" class="h-8 w-auto" loading="eager" />
-					</button>
+					<button id="auth-btn" class="px-3 py-2 text-sm text-paper-text bg-paper-bg2 border border-paper-border rounded hover:border-paper-border-hover transition-colors" title="Login">Login</button>
 				</div>
 			</div>
 		</header>
 		<script is:inline>
 			(function() {
 				const authBtn = document.getElementById('auth-btn');
-				const authImg = document.getElementById('auth-img');
 				const newPasteBtn = document.getElementById('new-paste-btn');
-				const loginIcon = authBtn.dataset.loginIcon;
-				const logoutIcon = authBtn.dataset.logoutIcon;
 				const isLoggedIn = localStorage.getItem('pbnj_logged_in');
 
 				if (isLoggedIn) {
-					authImg.src = logoutIcon;
-					authImg.alt = 'Logout';
+					authBtn.textContent = 'Logout';
 					authBtn.title = 'Logout';
 					newPasteBtn.style.display = 'block';
 				}
@@ -80,8 +72,7 @@ const hljsStylePath = `/styles/hljs-${config.theme}.css`;
 						// Call logout API to clear session
 						await fetch('/api/auth/logout', { method: 'POST' });
 						localStorage.removeItem('pbnj_logged_in');
-						authImg.src = loginIcon;
-						authImg.alt = 'Login';
+						authBtn.textContent = 'Login';
 						authBtn.title = 'Login';
 						newPasteBtn.style.display = 'none';
 						// Reload to refresh any auth-dependent content

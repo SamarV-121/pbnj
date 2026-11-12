@@ -13,19 +13,19 @@ The web interface uses secure session-based authentication:
 
 This is more secure than storing credentials in localStorage, as the actual auth key is only used once during login.
 
-### Header Icons
+### Header Buttons
 
-The header displays different icons based on your login state:
+The header button changes based on your login state:
 
-| Icon | State | Action |
-|------|-------|--------|
-| Peanut | Logged out | Click to go to login page |
-| Bread | Logged in | Click to create a new paste |
-| Jelly | Logged in | Click to log out |
+| Button | State | Action |
+|--------|-------|--------|
+| Login | Logged out | Click to go to login page |
+| New paste | Logged in | Click to create a new paste |
+| Logout | Logged in | Click to log out |
 
 ## Login
 
-1. Click the peanut icon in the header (or navigate to `/login`)
+1. Click Login in the header (or navigate to `/login`)
 2. Enter your `AUTH_KEY`
 3. Press Enter or click the arrow button
 
@@ -33,7 +33,7 @@ After logging in, you'll be redirected back to the page you came from.
 
 ## Creating Pastes
 
-When logged in, click the bread icon in the header to create a new paste.
+When logged in, click New paste in the header to create a new paste.
 
 ### New Paste Page
 
@@ -62,11 +62,11 @@ The delete button appears in:
 
 ## Logout
 
-Click the jelly icon in the header to log out. This invalidates your session on the server and clears the session cookie.
+Click Logout in the header to log out. This invalidates your session on the server and clears the session cookie.
 
 ## Private Pastes on Homepage
 
-When logged in, the homepage shows all your pastes including private ones. Private pastes are marked with a lock icon (🔒). When logged out, only public pastes are visible.
+When logged in, the homepage shows all your pastes including private ones. Private pastes are marked with a "Private" label. When logged out, only public pastes are visible.
 
 ---
 Next: Back to 01_welcome.md
