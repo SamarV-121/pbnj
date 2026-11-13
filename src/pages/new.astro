@@ -7,7 +7,7 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 <Layout title={`New Paste - ${config.name}`}>
 	<div class="max-w-6xl mx-auto pb-12">
 		<!-- Header row -->
-		<div class="mb-3 flex items-center justify-between gap-3">
+		<div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 			<!-- Editable title -->
 			<input
 				type="text"
@@ -18,7 +18,7 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 			/>
 
 			<!-- Action buttons -->
-			<div class="flex gap-3 flex-shrink-0">
+			<div class="flex flex-wrap gap-2 sm:gap-3 flex-shrink-0">
 				<!-- Language selector -->
 				<select
 					id="language"
@@ -172,7 +172,7 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 		</div>
 
 		<!-- Code editor card -->
-		<div id="editor-wrapper" class="border border-paper-border rounded overflow-hidden bg-paper-bg2 flex" style="transition: border-color 0.3s ease;">
+		<div id="editor-wrapper" class="border border-paper-border rounded overflow-hidden bg-paper-bg2 flex flex-col md:flex-row" style="transition: border-color 0.3s ease;">
 			<textarea
 				id="code-input"
 				class="flex-1 min-w-0 bg-paper-bg2 text-paper-text resize-none"
@@ -180,7 +180,7 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 				spellcheck="false"
 				style="min-height: 480px; padding: 1.5rem; outline: none; line-height: 1.625; font-family: 'SF Mono', Monaco, 'Courier New', monospace; font-size: 0.875rem;"
 			></textarea>
-			<div id="markdown-preview" class="markdown-body flex-1 min-w-0 overflow-auto p-6 border-l border-paper-border text-paper-text" hidden></div>
+			<div id="markdown-preview" class="markdown-body flex-1 min-w-0 overflow-auto p-6 border-t md:border-t-0 md:border-l border-paper-border text-paper-text" hidden></div>
 		</div>
 
 		<!-- Uploaded images; Markdown notes also get a reference inserted at the cursor -->

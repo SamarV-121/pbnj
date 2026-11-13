@@ -18,7 +18,7 @@ const hljsStylePath = `/styles/hljs-${config.theme}.css`;
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" type="image/png" href="/favicon.png" />
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content={description} />
@@ -43,7 +43,7 @@ const hljsStylePath = `/styles/hljs-${config.theme}.css`;
 	</head>
 	<body class="bg-paper-bg min-h-screen font-sans text-paper-text flex flex-col">
 		<header class="sm:fixed sm:top-0 sm:left-0 w-full sm:z-50">
-			<div class="max-w-[1600px] mx-auto px-8 py-3 flex items-center justify-between">
+			<div class="max-w-[1600px] mx-auto px-4 sm:px-8 py-3 flex items-center justify-between">
 				<a href="/" class="hover:opacity-70 transition-opacity inline-block" aria-label={`${config.name} home`}>
 					<img src={config.logo} alt={config.name} class="h-8 w-auto" loading="eager" />
 				</a>
@@ -85,7 +85,7 @@ const hljsStylePath = `/styles/hljs-${config.theme}.css`;
 				});
 			})();
 		</script>
-		<main class="sm:pt-16 px-8 max-w-[1600px] w-full mx-auto flex-1">
+		<main class="sm:pt-16 px-4 sm:px-8 max-w-[1600px] w-full mx-auto flex-1">
 			<slot />
 		</main>
 		{config.footer && (

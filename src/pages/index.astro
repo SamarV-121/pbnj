@@ -81,7 +81,7 @@ function highlightPreview(code: string, language: string): string {
 			</nav>
 		)}
 		{isAuthed && pastes.length > 0 && (
-			<div class="selection-toolbar items-center gap-4 mb-6 text-sm">
+			<div class="selection-toolbar flex-wrap items-center gap-4 mb-6 text-sm">
 				<label class="flex items-center gap-2 text-paper-muted cursor-pointer">
 					<input id="select-all" type="checkbox" autocomplete="off" />
 					Select all
@@ -106,7 +106,7 @@ function highlightPreview(code: string, language: string): string {
 				</div>
 			</div>
 		)}
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-8">
 		{pastes.length === 0 && (
 			<div class="col-span-full text-center py-12">
 				<img src="/404.png" alt="No pastes yet" class="mx-auto mb-8 max-w-md w-full" />

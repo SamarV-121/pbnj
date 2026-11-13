@@ -280,7 +280,7 @@ const codePreview = locked ? '' : paste.code.slice(0, 150).replace(/\n/g, ' ').t
 
 		{!locked && isMarkdown && (
 			<>
-				<article class="markdown-body border border-paper-border rounded bg-paper-bg2 px-6 py-5" set:html={renderedMarkdown} />
+				<article class="markdown-body border border-paper-border rounded bg-paper-bg2 px-4 py-4 sm:px-6 sm:py-5" set:html={renderedMarkdown} />
 				<pre hidden><code id="paste-code">{paste.code}</code></pre>
 			</>
 		)}
@@ -312,7 +312,7 @@ const codePreview = locked ? '' : paste.code.slice(0, 150).replace(/\n/g, ' ').t
 		)}
 
 		{locked && (
-			<form method="POST" class="max-w-sm mx-auto mt-16 p-6 border border-paper-border rounded bg-paper-bg2">
+			<form method="POST" class="max-w-sm mx-auto mt-8 sm:mt-16 p-4 sm:p-6 border border-paper-border rounded bg-paper-bg2">
 				<p class="text-paper-text mb-4">This paste is password protected.</p>
 				<input
 					type="password"
@@ -471,10 +471,15 @@ const codePreview = locked ? '' : paste.code.slice(0, 150).replace(/\n/g, ' ').t
 	<style is:global>
 		.code-block pre {
 			margin: 0;
-			padding: 1.5rem;
+			padding: 1rem;
 			overflow-x: auto;
 			font-size: 0.875rem;
 			line-height: 1.625;
+		}
+		@media (min-width: 640px) {
+			.code-block pre {
+				padding: 1.5rem;
+			}
 		}
 		.code-block code {
 			font-family: 'SF Mono', Monaco, 'Courier New', monospace;
