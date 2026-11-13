@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS pastes (
   code TEXT NOT NULL,
   language TEXT,
   updated INTEGER NOT NULL,
+  created INTEGER NOT NULL,
   filename TEXT,
   is_private INTEGER DEFAULT 0,
   secret_key TEXT,
@@ -13,7 +14,8 @@ CREATE TABLE IF NOT EXISTS pastes (
   password_hash TEXT,
   max_reads INTEGER,
   read_count INTEGER NOT NULL DEFAULT 0,
-  is_unlisted INTEGER NOT NULL DEFAULT 0
+  is_unlisted INTEGER NOT NULL DEFAULT 0,
+  show_modified INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE INDEX IF NOT EXISTS idx_updated ON pastes(updated DESC);

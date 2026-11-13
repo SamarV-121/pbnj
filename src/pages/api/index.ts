@@ -167,6 +167,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     let filename: string | undefined;
     let isPrivate = false;
     let isUnlisted = false;
+    let showModified = true;
     let secretKey: string | null = null;
     let passwordHash: string | null = null;
     let expires: unknown;
@@ -199,6 +200,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       // Handle private flag and key
       isPrivate = formData.get('private') === 'true';
       isUnlisted = formData.get('unlisted') === 'true';
+      showModified = formData.get('showModified') !== 'false';
       const keyParam = formData.get('key') as string | null;
       if (keyParam) {
         secretKey = keyParam === 'true' ? generateSecretKey() : keyParam;
@@ -219,6 +221,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       filename = body.filename;
       isPrivate = body.private === true;
       isUnlisted = body.unlisted === true;
+      showModified = body.showModified !== false;
       expires = body.expires;
       maxReadsValue = body.maxReads;
 
@@ -325,9 +328,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       try {
         await runtime.env.DB.batch([
           runtime.env.DB.prepare(
-            'INSERT INTO pastes (id, code, language, updated, filename, is_private, secret_key, expires_at, password_hash, max_reads, is_unlisted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO pastes (id, code, language, updated, created, filename, is_private, secret_key, expires_at, password_hash, max_reads, is_unlisted, show_modified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
           )
-            .bind(id, code, lang, updated, filename, isPrivate ? 1 : 0, secretKey, expiresAt, passwordHash, maxReads, isUnlisted ? 1 : 0),
+            .bind(id, code, lang, updated, updated, filename, isPrivate ? 1 : 0, secretKey, expiresAt, passwordHash, maxReads, isUnlisted ? 1 : 0, showModified ? 1 : 0),
           ...attachImagesStatements(runtime.env.DB, id, imageIds),
         ]);
 

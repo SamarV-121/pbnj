@@ -21,7 +21,7 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
     }
 
     const paste = await runtime.env.DB.prepare(
-      `SELECT code, language, filename, is_private, is_unlisted, password_hash FROM pastes WHERE id = ? AND (expires_at IS NULL OR expires_at > ?) AND ${NOT_BURNED_SQL}`
+      `SELECT code, language, filename, is_private, is_unlisted, show_modified, password_hash FROM pastes WHERE id = ? AND (expires_at IS NULL OR expires_at > ?) AND ${NOT_BURNED_SQL}`
     )
       .bind(id, Date.now())
       .first();
@@ -47,6 +47,7 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
         filename: paste.filename,
         private: paste.is_private === 1,
         unlisted: paste.is_unlisted === 1,
+        showModified: paste.show_modified === 1,
         hasPassword: !!paste.password_hash,
         images: imageRows.results.map((row: any) => row.id),
       }),
@@ -106,6 +107,13 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
       });
     }
 
+    if (body.showModified !== undefined && typeof body.showModified !== 'boolean') {
+      return new Response(JSON.stringify({ error: 'showModified must be true or false' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Omitting images leaves the paste's images unchanged
     const imageIds = body.images === undefined ? undefined : parseImageIds(body.images);
     if (body.images !== undefined && !imageIds) {
@@ -151,6 +159,10 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     if (isUnlisted !== undefined) {
       sets.push('is_unlisted = ?');
       values.push(isUnlisted ? 1 : 0);
+    }
+    if (body.showModified !== undefined) {
+      sets.push('show_modified = ?');
+      values.push(body.showModified ? 1 : 0);
     }
     if (passwordHash !== undefined) {
       sets.push('password_hash = ?');

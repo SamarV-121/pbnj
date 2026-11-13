@@ -183,6 +183,8 @@ Options:
   --public                 Make a paste public (update only; clears key and password)
   --clear-password         Remove the password (update only)
   --no-expire              Remove the expiry (update only)
+  --hide-modified          Hide the modified time at the end of the note
+  --show-modified          Show the modified time again (update only)
   -n, --no-copy            Don't copy URL to clipboard
   -u, --update <id>        Update an existing paste by ID
   -l, --list [n]           List recent pastes (default: 10)
@@ -375,6 +377,8 @@ async function updatePaste(id, code, language, filename, config, options = {}) {
   } else if (options.isUnlisted) {
     body.unlisted = true;
   }
+  if (options.hideModified) body.showModified = false;
+  else if (options.showModified) body.showModified = true;
   if (options.password) body.password = options.password;
   else if (options.clearPassword) body.password = null;
   if (options.expires) body.expires = options.expires;
@@ -488,6 +492,7 @@ async function uploadPaste(code, language, filename, config, options = {}) {
   if (filename) body.filename = filename;
   if (options.isPrivate) body.private = true;
   if (options.isUnlisted) body.unlisted = true;
+  if (options.hideModified) body.showModified = false;
   if (options.secretKey) body.key = options.secretKey;
   if (options.password) body.password = options.password;
   if (options.expires) body.expires = options.expires;
@@ -643,6 +648,8 @@ async function main() {
   let maxReads = null;
   let makePublic = false;
   let clearExpires = false;
+  let hideModified = false;
+  let showModified = false;
   const imageFiles = [];
 
   for (let i = 0; i < args.length; i++) {
@@ -782,6 +789,16 @@ async function main() {
       continue;
     }
 
+    if (arg === '--hide-modified') {
+      hideModified = true;
+      continue;
+    }
+
+    if (arg === '--show-modified') {
+      showModified = true;
+      continue;
+    }
+
     if (arg === '-n' || arg === '--no-copy') {
       noCopy = true;
       continue;
@@ -822,7 +839,9 @@ async function main() {
     if (makePublic) fail('--public only works with -u');
     if (clearPassword) fail('--clear-password only works with -u');
     if (clearExpires) fail('--no-expire only works with -u');
+    if (showModified) fail('--show-modified only works with -u');
   }
+  if (hideModified && showModified) fail('--hide-modified cannot be combined with --show-modified');
   if (makePublic && (isPrivate || isUnlisted)) fail('--public cannot be combined with -p, -P, -k, or -U');
   if (isUnlisted && isPrivate) fail('-U cannot be combined with -p, -P, or -k');
   if (clearPassword && password) fail('--clear-password cannot be combined with -P');
@@ -890,6 +909,8 @@ async function main() {
       makePublic,
       password,
       clearPassword,
+      hideModified,
+      showModified,
       expires,
       clearExpires,
       imageIds,
@@ -906,6 +927,7 @@ async function main() {
       expires,
       maxReads,
       imageIds,
+      hideModified,
     });
 
     console.log(url);

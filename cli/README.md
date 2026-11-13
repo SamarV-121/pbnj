@@ -116,6 +116,8 @@ pbnj -u <paste-id> -U newfile.py
 pbnj -u <paste-id> -P newpassword newfile.py
 pbnj -u <paste-id> --clear-password --no-expire newfile.py
 pbnj -u <paste-id> -e 1d newfile.py
+pbnj -u <paste-id> --hide-modified newfile.md
+pbnj -u <paste-id> --show-modified newfile.md
 
 # Add images to an existing paste (kept alongside the current images)
 pbnj -u <paste-id> -i screenshot.png notes.md
@@ -164,6 +166,8 @@ Every argument after `-d` up to the next flag is treated as a paste ID, so don't
 | `--public` | Make an existing paste public, clearing its key and password (update only) |
 | `--clear-password` | Remove the password (update only) |
 | `--no-expire` | Remove the expiry (update only) |
+| `--hide-modified` | Hide the modified time at the end of the note |
+| `--show-modified` | Show the modified time again (update only) |
 | `-h, --help` | Show help |
 | `-v, --version` | Show version |
 | `--init` | Configure your pbnj instance |

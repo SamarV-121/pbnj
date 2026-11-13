@@ -45,6 +45,7 @@ The `/new` page provides a simple editor with these options:
 - **Reads** - Burn the paste after this many views, from 1 to 1,000,000 (leave empty for no limit). Only unlocked views by logged-out visitors count
 - **Private** - Toggle to make the paste private. Private pastes are hidden from the homepage for logged-out visitors
 - **Unlisted** - Toggle to keep the paste public but off the homepage for logged-out visitors. Turning it on turns Private off
+- **Modified** - Toggle to show or hide the modified time at the end of the note. On by default
 - **Password** - Shown when Private is on. Viewers must enter it to open the paste (optional)
 - **Image** - Add images from a file picker, or drag them onto the editor. See [Images](#images)
 - **Save** - Click or press `Cmd/Ctrl + S` to save
@@ -65,6 +66,7 @@ When logged in, an Edit button appears on paste view pages. It opens the editor 
 - **Password** - Leave empty to keep the current password, type a new one to change it, or tick "Remove the current password" to clear it
 - **Private** - Turning Private off also removes the paste's password and key
 - **Unlisted** - Turning Unlisted on also removes the paste's password and key
+- **Modified** - Starts on the paste's current setting. Turn it off to hide the modified time at the end of the note
 - **Images** - Listed under the editor. Click Remove to delete an image when you save. In Markdown notes, removing an image also removes its reference
 
 ## Images
@@ -79,6 +81,10 @@ Images follow the paste's privacy. A keyed or password-protected paste requires 
 ## Markdown Preview
 
 On `/new`, set the language to MD and a **Preview** button appears. It shows the note rendered as Markdown beside the editor, and updates as you type, including inserted images. Click **Hide preview** to return to the full-width editor.
+
+## Created and Modified Times
+
+Opened notes show when they were created and last modified at the end of the content, in your local time. Hide the Modified part with the Modified toggle on `/new`; it's saved with the paste. Pastes created before this was added show their last update as the created time.
 
 ## Deleting Pastes
 

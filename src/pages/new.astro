@@ -111,6 +111,17 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 					Unlisted
 				</button>
 
+				<!-- Modified time toggle -->
+				<button
+					id="modified-btn"
+					type="button"
+					class="p-2 px-4 text-paper-text bg-paper-bg2 border border-paper-border rounded hover:border-paper-border-hover transition-colors"
+					title="Show when this note was last modified"
+					aria-pressed="true"
+				>
+					Modified ✓
+				</button>
+
 				<!-- Private toggle -->
 				<button
 					id="private-btn"
@@ -212,10 +223,12 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 	const imageList = document.getElementById('image-list') as HTMLDivElement;
 	const previewBtn = document.getElementById('preview-btn') as HTMLButtonElement;
 	const unlistedBtn = document.getElementById('unlisted-btn') as HTMLButtonElement;
+	const modifiedBtn = document.getElementById('modified-btn') as HTMLButtonElement;
 	const markdownPreview = document.getElementById('markdown-preview') as HTMLDivElement;
 
 	let isPrivate = false;
 	let isUnlisted = false;
+	let showModified = true;
 	// Attached image IDs in display order, and how many uploads are in flight
 	let images: string[] = [];
 	let pendingUploads = 0;
@@ -249,8 +262,20 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 		updatePrivateButton();
 	});
 
+	// Whether the modified time is shown at the end of the note
+	function updateModifiedButton() {
+		modifiedBtn.textContent = showModified ? 'Modified ✓' : 'Modified';
+		modifiedBtn.setAttribute('aria-pressed', String(showModified));
+	}
+
+	modifiedBtn.addEventListener('click', () => {
+		showModified = !showModified;
+		updateModifiedButton();
+	});
+
 	// Initialize button style
 	updatePrivateButton();
+	updateModifiedButton();
 
 	// Clearing the password and typing a new one are mutually exclusive
 	clearPasswordInput.addEventListener('change', () => {
@@ -313,6 +338,9 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 			}
 			if (editId || isUnlisted) {
 				body.unlisted = isUnlisted;
+			}
+			if (editId || !showModified) {
+				body.showModified = showModified;
 			}
 			if (isPrivate && clearPasswordInput.checked) {
 				body.password = null;
@@ -381,7 +409,9 @@ import { MAX_READ_LIMIT } from '@/lib/reads';
 		renderImages();
 		isPrivate = data.private;
 		isUnlisted = data.unlisted;
+		showModified = data.showModified;
 		updatePrivateButton();
+		updateModifiedButton();
 
 		// Keep the current expiry unless another option is picked
 		expiresSelect.insertBefore(new Option('keep', 'keep'), expiresSelect.firstChild);

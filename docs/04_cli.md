@@ -61,6 +61,8 @@ pbnj - < file.txt
 --public                 Make a paste public (update only; clears key and password)
 --clear-password         Remove the password (update only)
 --no-expire              Remove the expiry (update only)
+--hide-modified          Hide the modified time at the end of the note
+--show-modified          Show the modified time again (update only)
 -n, --no-copy            Don't copy URL to clipboard
 -u, --update <id>        Update an existing paste by ID
 -l, --list [n]           List recent pastes (default: 10, or specify count)

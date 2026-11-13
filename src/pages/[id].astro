@@ -8,6 +8,9 @@ import { countRead, NOT_BURNED_SQL } from '@/lib/reads';
 
 const { id } = Astro.params;
 
+// Server-rendered fallback; the client swaps it for local time
+const formatUtc = (ms: number) => new Date(ms).toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+
 // Fetch paste from D1 database
 const runtime = Astro.locals.runtime as any;
 let paste: any = null;
@@ -296,6 +299,18 @@ const codePreview = locked ? '' : paste.code.slice(0, 150).replace(/\n/g, ' ').t
 			</div>
 		)}
 
+		{!locked && paste.created > 0 && (
+			<p class="mt-6 text-sm text-paper-muted">
+				Created <time datetime={new Date(paste.created).toISOString()} data-local>{formatUtc(paste.created)}</time>
+				{paste.show_modified === 1 && (
+					<>
+						{' · Modified '}
+						<time datetime={new Date(paste.updated).toISOString()} data-local>{formatUtc(paste.updated)}</time>
+					</>
+				)}
+			</p>
+		)}
+
 		{locked && (
 			<form method="POST" class="max-w-sm mx-auto mt-16 p-6 border border-paper-border rounded bg-paper-bg2">
 				<p class="text-paper-text mb-4">This paste is password protected.</p>
@@ -441,6 +456,15 @@ const codePreview = locked ? '' : paste.code.slice(0, 150).replace(/\n/g, ' ').t
 
 		document.getElementById('mobile-delete-btn')?.addEventListener('click', function() {
 			deletePaste(this);
+		});
+	</script>
+
+	<script is:inline>
+		document.querySelectorAll('time[data-local]').forEach((el) => {
+			const date = new Date(el.getAttribute('datetime'));
+			if (!Number.isNaN(date.getTime())) {
+				el.textContent = date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+			}
 		});
 	</script>
 

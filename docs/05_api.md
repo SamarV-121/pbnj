@@ -56,6 +56,7 @@ curl -X POST https://your-pbnj.workers.dev/api \
 | maxReads | number  | No       | Burns the paste after this many reads, from 1 to 1000000. Only unlocked page views by logged-out visitors count |
 | password | string  | No       | Viewers must enter this to open the paste. Makes the paste private |
 | images   | string[] | No      | Image IDs from `POST /api/images` to attach to the paste. Up to 20 |
+| showModified | boolean | No   | If false, the modified time isn't shown at the end of the note. Defaults to true |
 
 #### Response
 ```json
@@ -129,6 +130,7 @@ curl https://your-pbnj.workers.dev/api/crunchy-peanut-butter-sandwich \
   "filename": "hello.js",
   "private": true,
   "unlisted": false,
+  "showModified": true,
   "hasPassword": true,
   "images": ["3f9c0a1b2d4e5f60718293a4b5c6d7e8"]
 }
@@ -160,11 +162,12 @@ curl -X PUT https://your-pbnj.workers.dev/api/crunchy-peanut-butter-sandwich \
 | filename | string         | No       | Display filename                                                                                             |
 | private  | boolean        | No       | `true` makes the paste private, `false` makes it public. Turning it off also removes the key and password    |
 | unlisted | boolean        | No       | `true` makes the paste public but not listed on the homepage for logged-out visitors. Turning it on also removes the key and password |
+| showModified | boolean    | No       | `false` hides the modified time at the end of the note, `true` shows it |
 | password | string or null | No       | Sets a new password, which also makes the paste private. `null` or `""` removes the password                 |
 | expires  | string or null | No       | Restarts the expiry with a duration (`10m`, `1h`, `1d`, `1w`). `null` or `""` removes the expiry             |
 | images   | string[]       | No       | The paste's full image list. Images not listed are deleted. Omit to leave the images unchanged                |
 
-Fields you leave out keep their current values. An invalid `expires`, non-boolean `private` or `unlisted`, or invalid `images` returns 400. `maxReads` can only be set when creating a paste.
+Fields you leave out keep their current values. An invalid `expires`, non-boolean `private`, `unlisted`, or `showModified`, or invalid `images` returns 400. `maxReads` can only be set when creating a paste.
 
 #### Response
 ```json
