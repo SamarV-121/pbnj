@@ -27,7 +27,7 @@ const defaults: PbnjConfig = {
   sortOrder: 'newest',
   footer: {
     text: 'spread the code 🥪',
-    link: 'https://github.com/bhavnicksm/pbnj',
+    link: 'https://github.com/SamarV-121/pbnj',
   },
 };
 

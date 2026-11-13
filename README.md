@@ -7,16 +7,16 @@
 [![npm version](https://img.shields.io/npm/v/@pbnjs/cli?label=cli&color=cb3837)](https://www.npmjs.com/package/@pbnjs/cli)
 [![npm downloads](https://img.shields.io/npm/dm/@pbnjs/cli?color=cb3837)](https://www.npmjs.com/package/@pbnjs/cli)
 [![npm bundle size](https://img.shields.io/bundlephobia/minzip/@pbnjs/cli?label=size)](https://bundlephobia.com/package/@pbnjs/cli)
-[![GitHub stars](https://img.shields.io/github/stars/bhavnicksm/pbnj?style=flat&color=yellow)](https://github.com/bhavnicksm/pbnj/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/bhavnicksm/pbnj?style=flat&color=blue)](https://github.com/bhavnicksm/pbnj/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/SamarV-121/pbnj?style=flat&color=yellow)](https://github.com/SamarV-121/pbnj/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/SamarV-121/pbnj?style=flat&color=blue)](https://github.com/SamarV-121/pbnj/network/members)
 [![Docs](https://img.shields.io/badge/docs-pbnj-green)](./docs)
-[![License](https://img.shields.io/github/license/bhavnicksm/pbnj)](./LICENSE)
+[![License](https://img.shields.io/github/license/SamarV-121/pbnj)](./LICENSE)
 
 _pbnj is a simple, minimal self-hosted pastebin solution, focused on getting you started quickly and easily_
 
 [Features](#-features) · [Why?](#-why) · [Cost](#-cost) · [Speedrun](#-speedrun-get-started-under-a-minute) · [Not a Feature](#-intentionally-missing) · [Acknowledgements](#-acknowledgements)
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/bhavnicksm/pbnj)
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/SamarV-121/pbnj)
 
 </div>
 
@@ -104,7 +104,9 @@ For personal use, you'll never hit these limits. Even if you somehow do, D1's pa
 
 **Step 2:** Install the CLI
 ```bash
-npm install -g @pbnjs/cli
+git clone https://github.com/SamarV-121/pbnj.git
+cd pbnj
+npm install -g ./cli
 ```
 
 **Step 3:** Configure it
@@ -156,6 +158,6 @@ If pbnj made your life a little easier, consider giving it a star ⭐
 
 It helps others discover the project and makes me mass smile :)
 
-[![Star on GitHub](https://img.shields.io/github/stars/bhavnicksm/pbnj?style=social)](https://github.com/bhavnicksm/pbnj)
+[![Star on GitHub](https://img.shields.io/github/stars/SamarV-121/pbnj?style=social)](https://github.com/SamarV-121/pbnj)
 
 </div>

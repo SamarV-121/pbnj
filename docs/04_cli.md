@@ -3,8 +3,12 @@
 ## Installation
 
 ```bash
-npm install -g @pbnjs/cli
+git clone https://github.com/SamarV-121/pbnj.git
+cd pbnj
+npm install -g ./cli
 ```
+
+Keep the cloned repo in place: the global command links to its `cli/` folder.
 
 ## Configuration
 

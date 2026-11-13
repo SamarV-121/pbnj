@@ -26,7 +26,7 @@ Your pastebin will be live in under 60 seconds. No configuration needed.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/bhavnicksm/pbnj
+   git clone https://github.com/SamarV-121/pbnj
    cd pbnj
    npm install
    ```

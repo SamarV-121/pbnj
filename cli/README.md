@@ -6,22 +6,24 @@
 
 [![npm version](https://img.shields.io/npm/v/@pbnjs/cli?color=cb3837)](https://www.npmjs.com/package/@pbnjs/cli)
 [![npm downloads](https://img.shields.io/npm/dm/@pbnjs/cli?color=blue)](https://www.npmjs.com/package/@pbnjs/cli)
-[![License](https://img.shields.io/github/license/bhavnicksm/pbnj)](../LICENSE)
+[![License](https://img.shields.io/github/license/SamarV-121/pbnj)](../LICENSE)
 
-_The official CLI for [pbnj](https://github.com/bhavnicksm/pbnj) - paste code from your terminal_
+_The official CLI for [pbnj](https://github.com/SamarV-121/pbnj) - paste code from your terminal_
 
 </div>
 
 ## Installation
 
 ```bash
-npm install -g @pbnjs/cli
+git clone https://github.com/SamarV-121/pbnj.git
+cd pbnj
+npm install -g ./cli
 ```
 
-Or use without installing:
+Or use without installing, from the cloned repo:
 
 ```bash
-npx @pbnjs/cli myfile.py
+node cli/bin/pbnj.js myfile.py
 ```
 
 ## Quick Start

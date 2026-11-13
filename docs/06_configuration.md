@@ -98,7 +98,7 @@ Theme preset that controls syntax highlighting and UI colors. All themes use loc
 
 ### `footer`
 - **Type:** `{ text: string, link?: string }` or `undefined`
-- **Default:** `{ text: 'spread the code 🥪', link: 'https://github.com/bhavnicksm/pbnj' }`
+- **Default:** `{ text: 'spread the code 🥪', link: 'https://github.com/SamarV-121/pbnj' }`
 
 Optional footer displayed at the bottom of every page. Set to `undefined` or omit to hide the footer.
 
@@ -109,7 +109,7 @@ Example:
 ```js
 footer: {
   text: 'Powered by pbnj',
-  link: 'https://github.com/bhavnicksm/pbnj',
+  link: 'https://github.com/SamarV-121/pbnj',
 }
 ```
 

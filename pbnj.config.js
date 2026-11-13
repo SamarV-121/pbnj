@@ -1,6 +1,6 @@
 /**
  * pbnj configuration
- * @see https://github.com/bhavnicksm/pbnj
+ * @see https://github.com/SamarV-121/pbnj
  */
 export default {
   // Site name shown in title
@@ -31,6 +31,6 @@ export default {
   // Footer configuration (optional)
   // footer: {
   //   text: "spread the code 🥪",
-  //   link: "https://github.com/bhavnicksm/pbnj",
+  //   link: "https://github.com/SamarV-121/pbnj",
   // },
 };

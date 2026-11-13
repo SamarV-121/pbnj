@@ -10,7 +10,7 @@ No accounts, no bloat - just paste and share.
 ## Quick Start
 
 1. Click "Deploy to Cloudflare" on GitHub
-2. Install the CLI: `npm install -g @pbnjs/cli`
+2. Install the CLI: clone the repo, then run `npm install -g ./cli` from its root
 3. Configure: `pbnj --init`
 4. Paste: `pbnj myfile.py`
 
@@ -42,8 +42,8 @@ That's it. You now have your own pastebin.
 
 ## Links
 
-- GitHub: https://github.com/bhavnicksm/pbnj
-- CLI: https://www.npmjs.com/package/@pbnjs/cli
+- GitHub: https://github.com/SamarV-121/pbnj
+- CLI: https://github.com/SamarV-121/pbnj/tree/main/cli
 
 ---
 pbnj - spread your code

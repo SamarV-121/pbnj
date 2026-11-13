@@ -1,6 +1,6 @@
 {
   "name": "@pbnjs/cli",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "CLI for pbnj.sh - A minimal pastebin for code snippets",
   "type": "module",
   "bin": {
@@ -19,12 +19,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bhavnicksm/pbnj.git",
+    "url": "git+https://github.com/SamarV-121/pbnj.git",
     "directory": "cli"
   },
-  "homepage": "https://github.com/bhavnicksm/pbnj#readme",
+  "homepage": "https://github.com/SamarV-121/pbnj#readme",
   "bugs": {
-    "url": "https://github.com/bhavnicksm/pbnj/issues"
+    "url": "https://github.com/SamarV-121/pbnj/issues"
   },
   "engines": {
     "node": ">=18"
